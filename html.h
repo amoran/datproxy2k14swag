@@ -12,6 +12,12 @@
               / __/|   <| |__   _|  ___) |\ V  V / ___ \ |_| |
              |_____|_|\_\_|  |_|   |____/  \_/\_/_/   \_\____|
 
+
+                "Those who forget history are doomed to
+                 repeat it."
+                                - John Mann
+
+
 html.h
 
 This file defines the data structure that abstracts HTML request headers. It

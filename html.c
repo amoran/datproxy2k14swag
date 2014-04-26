@@ -12,6 +12,13 @@
               / __/|   <| |__   _|  ___) |\ V  V / ___ \ |_| |
              |_____|_|\_\_|  |_|   |____/  \_/\_/_/   \_\____|
 
+
+                "If I have seen further than others, it
+                 is because I have stood on the shoulders
+                 of giants."
+                                - John Mann
+
+
 html.c
 */
 
