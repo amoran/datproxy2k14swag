@@ -12,12 +12,8 @@
               / __/|   <| |__   _|  ___) |\ V  V / ___ \ |_| |
              |_____|_|\_\_|  |_|   |____/  \_/\_/_/   \_\____|
 
-"Your problem is how you are going to spend this one odd and precious life
- you have been issued. Whether you're going to spend it trying to look good
- and creating the illusion that you have power over people and circumstances,
- or whether you are going to taste it, enjoy it and find out the truth about
- who you are."
-               -John Mann, April 2014
+                   "Deleted code is debugged code.
+                               -Adam, April 2014
 
 A Cache implementation to be used in our web proxy.
 
