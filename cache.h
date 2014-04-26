@@ -30,7 +30,7 @@ cache.h
 #include <stdio.h>
 #include "csapp.h"
 
-#define PARTITION_QUANTITY
+#define PARTITION_QUANTITY 10
 
 /* Each object forms a node in a linked list */
 struct cache_object {
@@ -40,7 +40,7 @@ struct cache_object {
   struct cache_object *next;
 };
 
-typedef struct cache_object cache_object;
+typedef struct cache_object* cache_object;
 
 /* Each partition has a pointer to the first element in their linked list */
 struct cache_part {
@@ -49,7 +49,7 @@ struct cache_part {
   cache_object *first;
 };
 
-typedef struct cache_part cache_part;
+typedef struct cache_part* cache_part;
 
 /* The main cache has an array of partition structs */
 struct cache_t {
@@ -57,4 +57,9 @@ struct cache_t {
   cache_part parts[PARTITION_QUANTITY];
 };
 
-typedef struct cache_t cache_t;
+typedef struct cache_t* cache_t;
+
+
+cache_t cache_init (size_t alloc_size);
+
+cache_part part_init ();

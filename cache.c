@@ -27,20 +27,23 @@ A Cache implementation to be used in our web proxy.
 #define MAX_OBJECT_SIZE 102400;
 
 
-cache_t* cache_init (size_t alloc_size) {
+cache_t cache_init (size_t alloc_size) {
+  int i;
   cache_t swag_cache = malloc(sizeof(struct cache_t));
   swag_cache->size = alloc_size;
 
-  for (int i = 0; i < PARTITION_QUANTITY; i++) {
+  for (i = 0; i < PARTITION_QUANTITY; i++) {
     swag_cache->parts[i] = part_init();
   }
+
+  return swag_cache;
 }
 
 cache_part part_init () {
   cache_part part = malloc(sizeof(struct cache_part));
   part->size = 0;
   part->locked = 0;
-  part->cacheobject = NULL;
+  part->first = NULL;
   return part;
 }
 
