@@ -1,16 +1,19 @@
 /*
 
-                    John Mann and Adam Moran Present
-                ____        _    ____           _             
-               |  _ \  __ _| |_ / ___|__ _  ___| |__   ___    
-               | | | |/ _` | __| |   / _` |/ __| '_ \ / _ \   
-               | |_| | (_| | |_| |__| (_| | (__| | | |  __/   
-               |____/ \__,_|\__|\____\__,_|\___|_| |_|\___|   
-              ____  _    _ _  _     ______        ___    ____ 
-             |___ \| | _| | || |   / ___\ \      / / \  / ___|
-               __) | |/ / | || |_  \___ \\ \ /\ / / _ \| |  _ 
-              / __/|   <| |__   _|  ___) |\ V  V / ___ \ |_| |
-             |_____|_|\_\_|  |_|   |____/  \_/\_/_/   \_\____|
+                        John Mann and Adam Moran Present
+
+               _____        _   _____  _____   ______   ____     __         
+              |  __ \      | | |  __ \|  __ \ / __ \ \ / /\ \   / /         
+              | |  | | __ _| |_| |__) | |__) | |  | \ V /  \ \_/ /          
+              | |  | |/ _` | __|  ___/|  _  /| |  | |> <    \   /           
+              | |__| | (_| | |_| |    | | \ \| |__| / . \    | |            
+              |_____/ \__,_|\__|_|    |_|  \_\\____/_/ \_\   |_|            
+          ___  _   __ _  _       _  _    _______          __     _____ 
+         |__ \| | /_ | || |    _| || |_ / ____\ \        / /\   / ____|
+            ) | | _| | || |_  |_  __  _| (___  \ \  /\  / /  \ | |  __ 
+           / /| |/ / |__   _|  _| || |_ \___ \  \ \/  \/ / /\ \| | |_ |
+          / /_|   <| |  | |   |_  __  _|____) |  \  /\  / ____ \ |__| |
+         |____|_|\_\_|  |_|     |_||_| |_____/    \/  \/_/    \_\_____|
 
 
                 "If I have seen further than others, it
@@ -74,46 +77,25 @@ int port_from_url(char *url) {
  * Returns:
  *      The host URL from the given URL. For example, passing in the string
  *      "http://www.nasa.gov:1969/space_the_movie.html" would return the string
- *      "www.nasa.gov"
+ *      "www.nasa.gov".
+ *
+ *      Another example: "http://www.imdb.com/name/nm0339304/" would return
+ *      "www.imdb.com".
  */
 char *host_from_url(char *url) {
-    int a = 0; /* iteration */
-    int b = 0; /* iteration */
+    int a = 7; /* iteration */
     int found_dubslash = 0;
     int len = 0;
     char *to_return;
 
-    while (url[a] != '\0') {
-        /* If we see a slash... */
-        if (url[a] == '/') {
-            /* ...followed by another one... */
-            a++;
-            if (url[a] == '/') {
-                /* ...we've found the two slashes after the protocol. */
-                a++;
-                found_dubslash = 1;
-                break;
-            }
-        }
-        a++;
+    while (url[a] != '\0' && url[a] != ':' && url[a] != '/') {
+        len += 1;
     }
-
-    /* No double slashes? Must be invalid input and must return NULL. :-( */
-    if (!found_dubslash) {
-        return NULL;
-    }
-
-    b = a;
-    while (url[b] != '\0' && url[b] != ':' && url[b] != '/') {
-        b += 1;
-    }
-
-    len = b - a;
 
     /* Mallocate the new string. */
     to_return = (char*)(malloc(sizeof(char) * (len + 1)));
     to_return[len] = '\0';
-    strncpy(to_return, (url + a), len);
+    strncpy(to_return, (url + 7), len);
 
     /* We're done here. */
     return to_return;
@@ -134,6 +116,9 @@ char *host_from_url(char *url) {
  *      The page URL from the given URL. For example, passing in the string
  *      "http://www.nasa.gov:1969/space_the_movie.html" would return the string
  *      "/space_the_movie.html".
+ *
+ *      Another example: "http://www.imdb.com/name/nm0339304/" would return
+ *      "/name/nm0339304/".
  */
 char *page_from_url(char *url) {
     int a = 0; /* iteration */
@@ -161,36 +146,6 @@ char *page_from_url(char *url) {
     return to_return;
 }
 
-char *create_url(char *host, int port_num, char *page) {
-    int host_len = strlen(host);
-    int page_len = strlen(page);
-    int port_len = 1;
-    char *port
-
-    int total_len = 0;
-
-    char *to_return;
-
-    /* Through magic, convert the integer "port_num" to the string "port" and
-     * get the length of that string. The "port" string includes the 
-     * colon. */
-
-    /* Calculate the total length of the URL. Then mallocate this new URL
-     * string. */
-    total_len = 7 + host_len + port_len + page_len;
-    to_return = (char*)(malloc(sizeof(char) * total_len + 1));
-    to_return[total_len] = '\0';
-
-    /* Copy the substrings into the string. */
-    strncpy(to_return, http, 7);
-    strncpy((to_return + 7), host, host_len);
-    strncpy((to_return + 7 + host_len), port, port_len);
-    strncpy((to_return + 7 + host_len + port_len), page, page_len);
-
-    /* We're done here. */
-    return to_return;
-}
-
 html_header_data parse_header(char *header_str) {
     return NULL;
 }
@@ -201,6 +156,48 @@ void proxify_header(html_header_data header) {
     header->accept_encoding = accept_encoding_hdr;
 }
 
-void send_request(html_header_data header) {
 
+
+/**
+ * Called when we want to fire off a request whose header matches the one
+ * provided for us.
+ */
+void send_request(html_header_data header) {
+    /* Setup. */
+    char buffer[MAXLINE];
+
+    /* Get the host and port we're interested in. */
+    char *host = header->host;
+    char *method = header->request_type;
+    char *page = header->page;
+    int port = header->port;
+
+    /* Declare extra header variables. */
+    char *extra_header;
+    int a = 0;
+
+    /* Try to open a connection with the host on the port. */
+    int conn_file = Open_clientfd_r(host, port);
+
+    /* Write headers to the connection. */
+    sscanf(buffer, "%s http://%s:%d%s HTTP/1.0\r\n", method, host, port, page);
+    sscanf(buffer, "%s%s\r\n", buffer, header->user_agent);
+    sscanf(buffer, "%s%s\r\n", buffer, header->accept);
+    sscanf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
+    sscanf(buffer, "%s%s\r\n", buffer, header->connection);
+    sscanf(buffer, "%s%s\r\n", buffer, header->proxy_connection);
+
+    /* Write additional headers. Thanks to denial, we don't have to worry about
+     * buffer overflow! */
+    while (a < header->num_extra_headers) {
+        extra_header = header->extra_headers[a];
+        sscanf(buffer, "%s%s\r\n", buffer, extra_header);
+        a++;
+    }
+
+    /* The final carriage return. */
+    sscanf(buffer, "%s\r\n", buffer);
+
+    /* Write the buffer to the request file. */
+    // :-)
 }
