@@ -159,8 +159,20 @@ void proxify_header(html_header_data header) {
 
 
 /**
+ * send_request (html_header_data) -> int
+ *
  * Called when we want to fire off a request whose header matches the one
  * provided for us.
+ *
+ * Parameters:
+ *      header (html_header_data): The data we use to create the request header.
+ *
+ * Returns:
+ *      An integer representing the socket file, or something. Do we "listen"
+ *      for a response with this thing? The fuck if I know.
+ *
+ * Note:
+ *      http://i.imgur.com/xVyoSl.jpg
  */
 void send_request(html_header_data header) {
     /* Setup. */
@@ -180,24 +192,24 @@ void send_request(html_header_data header) {
     int conn_file = Open_clientfd_r(host, port);
 
     /* Write headers to the connection. */
-    sscanf(buffer, "%s http://%s:%d%s HTTP/1.0\r\n", method, host, port, page);
-    sscanf(buffer, "%s%s\r\n", buffer, header->user_agent);
-    sscanf(buffer, "%s%s\r\n", buffer, header->accept);
-    sscanf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
-    sscanf(buffer, "%s%s\r\n", buffer, header->connection);
-    sscanf(buffer, "%s%s\r\n", buffer, header->proxy_connection);
+    sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\n", method, host, port, page);
+    sprintf(buffer, "%s%s\r\n", buffer, header->user_agent);
+    sprintf(buffer, "%s%s\r\n", buffer, header->accept);
+    sprintf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
+    sprintf(buffer, "%s%s\r\n", buffer, header->connection);
+    sprintf(buffer, "%s%s\r\n", buffer, header->proxy_connection);
 
     /* Write additional headers. Thanks to denial, we don't have to worry about
      * buffer overflow! */
     while (a < header->num_extra_headers) {
         extra_header = header->extra_headers[a];
-        sscanf(buffer, "%s%s\r\n", buffer, extra_header);
+        sprintf(buffer, "%s%s\r\n", buffer, extra_header);
         a++;
     }
 
     /* The final carriage return. */
-    sscanf(buffer, "%s\r\n", buffer);
+    sprintf(buffer, "%s\r\n", buffer);
 
     /* Write the buffer to the request file. */
-    // :-)
+    Rio_writen(conn_file, buffer, strlen(buffer));
 }

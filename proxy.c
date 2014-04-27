@@ -69,7 +69,6 @@
     ;;LLLLLLLLLLCCLLLLLLLLffffLLLLLLffffLLffffffffffLLLLffffLLLLffffLLtt::;;ffLLLLLL@@@@LLLLLLLLffLLCCCCLLLLLLGGCCLLCCGGCC@@LL@@LLCCCC
     ..LLLLLLLLLLLLCCLLLLLLLLLLffLLLLLLffffLLLLffLLffffLLLLLLffLLLLLLLLGGLL::ttLLLL@@@@CCLLLLCCLLLLLLCCCCLLLLLLCC@@CCCCCCCCCC@@LL@@
 
-
 Thanks, Bruce.
 
 This file creates the proxy.
@@ -87,10 +86,14 @@ This file creates the proxy.
 #define MAX_CACHE_SIZE 1049000
 #define MAX_OBJECT_SIZE 102400
 
+/* Define functions. */
+void git_er_done(int file_id);
+void bruce_greenwood_echo(int file_id, int filesize);
+
 /* Main used partially from the book */
 int main(int argc, char **argv) {
 
-    int listenfd, connfd, port, clientlen;
+    int listen_file, conn_file, port, clientlen;
     struct sockaddr_in clientaddr;
 
     /* Check command line args, make sure port is specified */
@@ -101,7 +104,7 @@ int main(int argc, char **argv) {
     port = atoi(argv[1]);
 
     /* Begin listening for connections */
-    listenfd = Open_listenfd(port);
+    listen_file = Open_listenfd(port);
 
     /* Initialize the Proxy Cache */
     //cache_t* c = cache_init(MAX_CACHE_SIZE);
@@ -110,10 +113,11 @@ int main(int argc, char **argv) {
      * to handle them. */
     while (1) {
         clientlen = sizeof(clientaddr);
-        connfd = Accept(listenfd, (SA *)&clientaddr, (unsigned int *)(&clientlen));
+        conn_file = Accept(listen_file, (SA *)&clientaddr, (unsigned int *)(&clientlen));
         //create thread to handle this request
-        git_er_done(connfd);
-        Close(connfd);
+        //git_er_done(conn_file);
+        bruce_greenwood_echo(conn_file, -4);
+        Close(conn_file);
     }
 
     return 0;
@@ -143,6 +147,19 @@ void git_er_done(int file_id) {
         return;
     }
     read_request_headers(&robust_io);
+}
+
+void bruce_greenwood_echo(int file_id, int filesize) {
+    /* Setup. */
+    char buffer[MAXLINE];
+
+    /* Serve perpetually static content. */
+    sprintf(buffer, "HTTP/1.0 200 OK\r\n");
+    sprintf(buffer, "%sContent-type: text/html\r\n", buffer);
+    sprintf(buffer, "%s<html>Bruce Greenwood</html>", buffer);
+
+    /* Send response to the client. */
+    Rio_writen(file_id, buffer, strlen(buffer));
 }
 
 void read_request_headers(rio_t *rp) {

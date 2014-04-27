@@ -78,5 +78,4 @@ char *page_from_url(char *url);
 /* html_header_data function prototypes. */
 html_header_data parse_header(char *header_str);
 void proxify_header(html_header_data header);
-//char *header_to_send(html_header_data header);
 void send_request(html_header_data header);
