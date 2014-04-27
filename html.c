@@ -29,21 +29,83 @@ html.c
 #include "html.h"
 
 void parse_url(char *url, char **host, int *port, char **directory) {
-    char *port_str = (char*)(malloc(sizeof(char) * MAX_PORT_DIGITS));
+    int a = 7;
 
-    sscanf(url, "http://%[^:]:%s", *host, url);
-    sscanf(url, "%[^/]%s", port_str, *directory);
+    int host_start = 7;
+    int host_end = 0;
 
-    /* If we are not given a port, then set it to the default HTTP port (80) */
-    if (port_str[0] == '\0') {
-        port_str = "80";
+    int port_start = 0;
+    int port_end = 0;
+
+    int dir_start = 0;
+    int dir_end = 0;
+
+    int len = strlen(url);
+
+    char *port_str;
+    //char *bg_temp = (char*)(malloc(sizeof(char) * MAXLINE));
+
+    /*
+    sscanf(url, "http://%[^(:|/)]%s", *host, bg_temp);
+    printf("From parse_url %s %s\n", *host, bg_temp);
+    sscanf(bg_temp, "%[^/]%s", port_str, *directory);
+    printf("Port str%s\n\n", port_str);
+    */
+
+    while (a < len) {
+        if (url[a] == ':') {
+            port_start = a + 1;
+            host_end = a;
+            break;
+        }
+
+        else if (url[a] == '/') {
+            port_start = -1;
+            port_end = -1;
+            port = 80;
+            host_end = a;
+            dir_start = a + 1;
+            break;
+        }
+
+        a++;
     }
+
+    *host = (char*)(malloc(sizeof(char) * (host_end - host_start + 1)));
+    strncpy(*host, (url + host_start), host_end - host_start);
+
+    if (port_start > 0) {
+        a = port_start;
+
+        while (a < len) {
+            if (url[a] == '/') {
+                port_end = a;
+                dir_start = a + 1;
+                break;
+            }
+
+            else if (url[a+1] == '\0') {
+                port_end = a + 1;
+                dir_start = -1;
+                dir_end = -1;
+                break;
+            }
+
+            a++;
+        }
+
+        port_str = (char*)(malloc(sizeof(char) * (port_end - port_start + 1)));
+        strncpy(port_str, (url + port_start), (port_end - port_start));
+    }
+
+    
 
     /* Set the port. */
     *port = atoi(port_str);
 
     /* We're done here. */
-    free(port_str);
+    //free(port_str);
+    //free(bg_temp);
 }
 
 

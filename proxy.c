@@ -39,15 +39,15 @@
                       iill;;;;::::,,;;::,,,,::,,ttLL::::::iillttGGGG@@
                       ..::;;ii::::,,,,,,..::::,,llCC;;;;;;iillLLGG@@@@
                         ::;;iiii::,,,,,,..,,::,,iiLLii::;;iittCCGG@@GG
- __________________     CC;;iiii;;::,,,,,,,,::..iiCCLL;;;;iiffGGGG@@tt
-/ I'm Canadian     \      ;;iiii;;::::,,::;;ttllCCGGGGii;;llLLGG@@
++------------------+    CC;;iiii;;::,,,,,,,,::..iiCCLL;;;;iiffGGGG@@t
+| I'm Canadian     |      ;;iiii;;::::,,::;;ttllCCGGGGii;;llLLGG@@@t
 | actor Bruce      |        llii;;::::::,,,,::ff@@@@GGttllttCCGG@@
 | Greenwood, and   |        ,,ii;;;;;;::::::::ii;;llttttllffCCCCLL
 | this is simply   |          ll;;;;;;;;;;;;::::::llffGGffttCCCC::
-| the best web     |_______   CC;;;;;;ll::iiiiiillttffGGttllCCGG
-| proxy ever        _______\  ..ii;;;;;;::;;;;llttffGGffttLLLLGG
+| the best web     |          CC;;;;;;ll::iiiiiillttffGGttllCCGG
+| proxy ever        =======>  ..ii;;;;;;::;;;;llttffGGffttLLLLGG
 | created. #SWAG   |          lliiiiii;;;;;;;;;;llttttLLttCCGG;;
-\__________________/          @@ttllii;;;;::,,::;;iillffLLGGGG;;
++------------------+          @@ttllii;;;;::,,::;;iillffLLGGGG;;
                           ..LL@@tt;;ttii;;::::iiiillffGGGGGG@@
                           ffffCCii;;;;ttttllllffttffCCGG@@@@@@
                         ::ffffCCii;;::;;ttCCCCGGGGGGGG@@@@@@@@@@..
