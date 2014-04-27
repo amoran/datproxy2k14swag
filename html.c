@@ -208,11 +208,22 @@ int send_request(html_header_data header) {
     sprintf(buffer, "%s\r\n", buffer);
     printf("%s", buffer);
 
-    conn_file =  Open_clientfd_r(header->host, port);
+    conn_file = Open_clientfd_r(header->host, port);
 
     /* Write the buffer to the request file. */
     Rio_writen(conn_file, buffer, strlen(buffer));
 
     /* We're done here. */
     return conn_file;
+}
+
+
+
+void receive_response(int client_file, int server_file) {
+    char buffer[MAXLINE];
+    size_t response_size;
+
+    while ((response_size = Rio_readn(server_file, buffer, MAXLINE)) > 0) {
+        Rio_writen(client_file, buffer, response_size); 
+    }
 }

@@ -94,7 +94,7 @@ void read_request_headers(rio_t *rp);
 /* Main used partially from the book */
 int main(int argc, char **argv) {
     /* Declare variables. */
-    int listen_file, conn_file, port, clientlen;
+    int client_file, conn_file, server_file, port, clientlen;
     struct sockaddr_in clientaddr;
     rio_t robust_io;
     html_header_data header;
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     port = atoi(argv[1]);
 
     /* Begin listening for connections */
-    listen_file = Open_listenfd(port);
+    client_file = Open_listenfd(port);
 
     /* Initialize the Proxy Cache */
     //cache_t* c = cache_init(MAX_CACHE_SIZE);
@@ -116,70 +116,16 @@ int main(int argc, char **argv) {
      * to handle them. */
     while (1) {
         clientlen = sizeof(clientaddr);
-        conn_file = Accept(listen_file, (SA *)&clientaddr,
+        conn_file = Accept(client_file, (SA *)&clientaddr,
                            (unsigned int *)(&clientlen));
-        //create thread to handle this request
-        //git_er_done(conn_file);
-        //bruce_greenwood_echo(conn_file, -4);
         header = parse_request_header(&robust_io, conn_file);
         proxify_header(header);
-        send_request(header);
+        server_file = send_request(header);
+        receive_response(conn_file, server_file);
 
         /* Close the request. */
         Close(conn_file);
     }
 
     return 0;
-}
-
-void git_er_done(int file_id) {
-    int is_static;
-    struct stat sbuf;
-
-    char buf[MAXLINE];
-    char method[MAXLINE];
-    char uri[MAXLINE];
-    char version[MAXLINE];
-    char filename[MAXLINE];
-    char cgiargs[MAXLINE];
-
-    rio_t robust_io;
-
-    /* Read request line and headers. */
-    Rio_readinitb(&robust_io, file_id);
-
-    //Rio_readlineb(&robust_io, buf, MAXLINE);
-    //sscanf(buf, "%s %s %s", method, uri, version);
-    if (strcasecmp(method, "GET")) {
-        printf("FUCK!\n");
-        //clienterror(file_id, method, "501", "Not Implemented",
-        //            "PC LOAD LETTER: Method not implemented");
-        return;
-    }
-    read_request_headers(&robust_io);
-}
-
-void bruce_greenwood_echo(int file_id, int filesize) {
-    /* Setup. */
-    char buffer[MAXLINE];
-
-    /* Serve perpetually static content. */
-    sprintf(buffer, "HTTP/1.0 200 OK\r\n");
-    sprintf(buffer, "%sContent-type: text/html\r\n", buffer);
-    sprintf(buffer, "%s<html>Bruce Greenwood</html>", buffer);
-
-    /* Send response to the client. */
-    Rio_writen(file_id, buffer, strlen(buffer));
-}
-
-void read_request_headers(rio_t *rp) {
-    char buf[MAXLINE];
-
-    Rio_readlineb(rp, buf, MAXLINE);
-    while (strcmp(buf, "\r\n")) {
-        Rio_readlineb(rp, buf, MAXLINE);
-        printf("%s", buf);
-    }
-
-    return;
 }
