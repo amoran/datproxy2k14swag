@@ -35,6 +35,9 @@ etc.
 /* Include our files. */
 #include "csapp.h"
 
+/* TODO */
+#define MAX_PORT_DIGITS 15
+
 /* You won't lose style points for including these long lines in your code */
 static char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 static char *accept_hdr = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n";
@@ -43,7 +46,7 @@ static char *accept_encoding_hdr = "Accept-Encoding: gzip, deflate\r\n";
 /* Define data structures. */
 struct html_header_data {
     /* Request destination. */
-    char *port;
+    int port;
     char *host;
     char *directory;
 
@@ -66,9 +69,9 @@ struct html_header_data {
 typedef struct html_header_data* html_header_data;
 
 /* Define URL-parsing functions. */
-int port_from_url(char *url);
-char *host_from_url(char *url);
-char *page_from_url(char *url);
+void parse_url(char *buffer, char **host, int *port, char **directory);
+void parse_request_prologue(char *buffer, char **method, char **host,
+                            int *port, char **directory);
 
 /* html_header_data function prototypes. */
 html_header_data parse_request_header(rio_t *file, int file_id);
