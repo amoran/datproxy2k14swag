@@ -146,21 +146,22 @@ char *page_from_url(char *url) {
     return to_return;
 }
 
-html_header_data parse_request_header(rio_t *file) {
+html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     char buffer[MAXLINE];
 
     size_t sz = sizeof(struct html_header_data);
 
     int port = 80; /* Default value. */
-    char *host;
-    char *directory;
-    char *method;
-    char *version;
+    char *host = (char*)(malloc(sizeof(char) * MAXLINE));
+    char *directory = (char*)(malloc(sizeof(char) * MAXLINE));
+    char *method = (char*)(malloc(sizeof(char) * MAXLINE));
+    char *version = (char*)(malloc(sizeof(char) * MAXLINE));
 
     html_header_data header = (html_header_data)(malloc(sz));
 
-    Rio_readlineb(file, buffer, MAXLINE);
-    sscanf(buffer, "%s http://%s[^:]%d%s %s", method, host, port,
+    Rio_readinitb(robust_io, file_id);
+    Rio_readlineb(robust_io, buffer, MAXLINE);
+    sscanf(buffer, "%s http://%[^:^/]:%d%s %s\r\n", method, host, port,
            directory, version);
     if (port == 0) {
         port = 80;
@@ -168,11 +169,17 @@ html_header_data parse_request_header(rio_t *file) {
 
     header->host = host;
     header->directory = directory;
-    header->port;
+    header->port = port;
     header->method = method;
     header->version = version;
 
-    printf("%s http://%s:%d%s %s\n", method, host, port, directory, version);
+    printf("%s\n", buffer);
+    printf("%s\n", method);
+    printf("%s\n", host);
+    printf("%d\n", port);
+    printf("%s\n", directory);
+    printf("%s\n", version);
+    //printf("%s http://%s:%d%s %s\n", method, host, port, directory, version);
 
     /* We're done here. */
     return header;
@@ -208,7 +215,7 @@ void send_request(html_header_data header) {
 
     /* Get the host and port we're interested in. */
     char *host = header->host;
-    char *method = header->request_type;
+    char *method = header->method;
     char *directory = header->directory;
     char *version = header->version;
     int port = header->port;

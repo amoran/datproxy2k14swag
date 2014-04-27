@@ -89,12 +89,14 @@ This file creates the proxy.
 /* Define functions. */
 void git_er_done(int file_id);
 void bruce_greenwood_echo(int file_id, int filesize);
+void read_request_headers(rio_t *rp);
 
 /* Main used partially from the book */
 int main(int argc, char **argv) {
 
     int listen_file, conn_file, port, clientlen;
     struct sockaddr_in clientaddr;
+    rio_t robust_io;
 
     /* Check command line args, make sure port is specified */
     if (argc != 2) {
@@ -116,7 +118,8 @@ int main(int argc, char **argv) {
         conn_file = Accept(listen_file, (SA *)&clientaddr, (unsigned int *)(&clientlen));
         //create thread to handle this request
         //git_er_done(conn_file);
-        bruce_greenwood_echo(conn_file, -4);
+        //bruce_greenwood_echo(conn_file, -4);
+        parse_request_header(&robust_io, conn_file);
         Close(conn_file);
     }
 
@@ -138,8 +141,9 @@ void git_er_done(int file_id) {
 
     /* Read request line and headers. */
     Rio_readinitb(&robust_io, file_id);
-    Rio_readlineb(&robust_io, buf, MAXLINE);
-    sscanf(buf, "%s %s %s", method, uri, version);
+
+    //Rio_readlineb(&robust_io, buf, MAXLINE);
+    //sscanf(buf, "%s %s %s", method, uri, version);
     if (strcasecmp(method, get_request)) {
         printf("FUCK!\n");
         //clienterror(file_id, method, "501", "Not Implemented",

@@ -53,7 +53,7 @@ struct html_header_data {
     char *directory;
 
     /* Request type. */
-    char *request_type;
+    char *method;
     char *version;
 
     /* Required headers. */
@@ -77,6 +77,6 @@ char *host_from_url(char *url);
 char *page_from_url(char *url);
 
 /* html_header_data function prototypes. */
-html_header_data parse_request_header(rio_t *file);
+html_header_data parse_request_header(rio_t *file, int file_id);
 void proxify_header(html_header_data header);
 void send_request(html_header_data header);
