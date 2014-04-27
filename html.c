@@ -84,7 +84,6 @@ int port_from_url(char *url) {
  */
 char *host_from_url(char *url) {
     int a = 7; /* iteration */
-    int found_dubslash = 0;
     int len = 0;
     char *to_return;
 
@@ -161,7 +160,7 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     Rio_readinitb(robust_io, file_id);
     Rio_readlineb(robust_io, buffer, MAXLINE);
-    sscanf(buffer, "%s http://%[^:^/]:%d%s %s\r\n", method, host, port,
+    sscanf(buffer, "%s http://%[^:^/]:%d%s %s\r\n", method, host, &port,
            directory, version);
     if (port == 0) {
         port = 80;
@@ -173,7 +172,7 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     header->method = method;
     header->version = version;
 
-    printf("%s\n", buffer);
+    printf("%s", buffer);
     printf("%s\n", method);
     printf("%s\n", host);
     printf("%d\n", port);

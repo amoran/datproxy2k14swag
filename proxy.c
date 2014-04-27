@@ -144,7 +144,7 @@ void git_er_done(int file_id) {
 
     //Rio_readlineb(&robust_io, buf, MAXLINE);
     //sscanf(buf, "%s %s %s", method, uri, version);
-    if (strcasecmp(method, get_request)) {
+    if (strcasecmp(method, "GET")) {
         printf("FUCK!\n");
         //clienterror(file_id, method, "501", "Not Implemented",
         //            "PC LOAD LETTER: Method not implemented");
