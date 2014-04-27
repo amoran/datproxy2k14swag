@@ -113,6 +113,11 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     Rio_readlineb(robust_io, buffer, MAXLINE);
     parse_request_prologue(buffer, &method, &host, &port, &directory);
 
+    header->method = method;
+    header->host = host;
+    header->port = port;
+    header->directory = directory;
+
     printf("Whole Buffer: %s", buffer);
     printf("Method:       %s\n", method);
     printf("Host:         %s\n", host);
@@ -143,6 +148,8 @@ void proxify_header(html_header_data header) {
     header->user_agent = user_agent_hdr;
     header->accept = accept_hdr;
     header->accept_encoding = accept_encoding_hdr;
+    header->connection = connection_hdr;
+    header->proxy_connection = proxy_connection_hdr;
 }
 
 
@@ -163,12 +170,11 @@ void proxify_header(html_header_data header) {
  * Note:
  *      http://i.imgur.com/xVyoSl.jpg
  */
-void send_request(html_header_data header) {
+int send_request(html_header_data header) {
     /* Setup. */
     char buffer[MAXLINE];
 
     /* Get the host and port we're interested in. */
-    char *host = header->host;
     char *method = header->method;
     char *directory = header->directory;
     int port = header->port;
@@ -178,15 +184,17 @@ void send_request(html_header_data header) {
     int a = 0;
 
     /* Try to open a connection with the host on the port. */
-    int conn_file = Open_clientfd_r(host, port);
+    int conn_file;
 
     /* Write headers to the connection. */
-    sprintf(buffer, "%s http://%s:%d%s \r\n", method, host, port, directory);
-    sprintf(buffer, "%s%s\r\n", buffer, header->user_agent);
-    sprintf(buffer, "%s%s\r\n", buffer, header->accept);
-    sprintf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
-    sprintf(buffer, "%s%s\r\n", buffer, header->connection);
-    sprintf(buffer, "%s%s\r\n", buffer, header->proxy_connection);
+    //sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\n", method, host, port, directory);
+    sprintf(buffer, "%s %s HTTP/1.0\r\n", method, directory);
+    sprintf(buffer, "%sHost: %s:%d\r\n", buffer, header->host, header->port);
+    sprintf(buffer, "%s%s", buffer, header->user_agent);
+    sprintf(buffer, "%s%s", buffer, header->accept);
+    sprintf(buffer, "%s%s", buffer, header->accept_encoding);
+    sprintf(buffer, "%s%s", buffer, header->connection);
+    sprintf(buffer, "%s%s", buffer, header->proxy_connection);
 
     /* Write additional headers. Thanks to denial, we don't have to worry about
      * buffer overflow! */
@@ -198,7 +206,13 @@ void send_request(html_header_data header) {
 
     /* The final carriage return. */
     sprintf(buffer, "%s\r\n", buffer);
+    printf("%s", buffer);
+
+    conn_file =  Open_clientfd_r(header->host, port);
 
     /* Write the buffer to the request file. */
     Rio_writen(conn_file, buffer, strlen(buffer));
+
+    /* We're done here. */
+    return conn_file;
 }

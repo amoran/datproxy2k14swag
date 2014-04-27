@@ -42,6 +42,8 @@ etc.
 static char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 static char *accept_hdr = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n";
 static char *accept_encoding_hdr = "Accept-Encoding: gzip, deflate\r\n";
+static char *connection_hdr = "Connection: close\r\n";
+static char *proxy_connection_hdr = "Proxy-Connection: close\r\n";
 
 /* Define data structures. */
 struct html_header_data {
@@ -76,4 +78,4 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 /* html_header_data function prototypes. */
 html_header_data parse_request_header(rio_t *file, int file_id);
 void proxify_header(html_header_data header);
-void send_request(html_header_data header);
+int send_request(html_header_data header);

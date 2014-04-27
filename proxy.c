@@ -93,10 +93,11 @@ void read_request_headers(rio_t *rp);
 
 /* Main used partially from the book */
 int main(int argc, char **argv) {
-
+    /* Declare variables. */
     int listen_file, conn_file, port, clientlen;
     struct sockaddr_in clientaddr;
     rio_t robust_io;
+    html_header_data header;
 
     /* Check command line args, make sure port is specified */
     if (argc != 2) {
@@ -120,7 +121,11 @@ int main(int argc, char **argv) {
         //create thread to handle this request
         //git_er_done(conn_file);
         //bruce_greenwood_echo(conn_file, -4);
-        parse_request_header(&robust_io, conn_file);
+        header = parse_request_header(&robust_io, conn_file);
+        proxify_header(header);
+        send_request(header);
+
+        /* Close the request. */
         Close(conn_file);
     }
 
