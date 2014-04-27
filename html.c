@@ -29,76 +29,43 @@ html.c
 #include "html.h"
 
 void parse_url(char *url, char **host, int *port, char **directory) {
-    int a = 7;
+    char* method[50];
+    char* url[50];
+    char* version[50];
+    char* host[50];
+    char* port[50];
+    char* directory[50];
+    char* finalhost[50];
 
-    int host_start = 7;
-    int host_end = 0;
+    sscanf(str, "%s %s %s", method, url, version);
+    printf("Method: %s \n", method);
+    printf("Version: %s \n", version);
+    printf("TempURL: %s \n", url);
 
-    int port_start = 0;
-    int port_end = 0;
+    sscanf(url, "http://%[^/]%s", host, directory);
 
-    int dir_start = 0;
-    int dir_end = 0;
+    printf("TempHost: %s \n", host);
+    printf("Directory: %s \n", directory);
 
-    int len = strlen(url);
 
-    char *port_str;
-    //char *bg_temp = (char*)(malloc(sizeof(char) * MAXLINE));
+    char* pPosition = strchr(host, ':');
+    printf("pPosition: %s \n", pPosition);
 
-    /*
-    sscanf(url, "http://%[^(:|/)]%s", *host, bg_temp);
-    printf("From parse_url %s %s\n", *host, bg_temp);
-    sscanf(bg_temp, "%[^/]%s", port_str, *directory);
-    printf("Port str%s\n\n", port_str);
-    */
-
-    while (a < len) {
-        if (url[a] == ':') {
-            port_start = a + 1;
-            host_end = a;
-            break;
-        }
-
-        else if (url[a] == '/') {
-            port_start = -1;
-            port_end = -1;
-            port = 80;
-            host_end = a;
-            dir_start = a + 1;
-            break;
-        }
-
-        a++;
+    if (pPosition != NULL) {
+        sscanf(host, "%[^:]:%s", finalhost, port);
+        printf("Host: %s \n", finalhost);
+        printf("Port: %s \n", port);
+    }
+    else {
+        printf("Host: %s \n", host);
+        printf("Port: 80 \n");
     }
 
-    *host = (char*)(malloc(sizeof(char) * (host_end - host_start + 1)));
-    strncpy(*host, (url + host_start), host_end - host_start);
 
-    if (port_start > 0) {
-        a = port_start;
 
-        while (a < len) {
-            if (url[a] == '/') {
-                port_end = a;
-                dir_start = a + 1;
-                break;
-            }
+    return 1;
 
-            else if (url[a+1] == '\0') {
-                port_end = a + 1;
-                dir_start = -1;
-                dir_end = -1;
-                break;
-            }
 
-            a++;
-        }
-
-        port_str = (char*)(malloc(sizeof(char) * (port_end - port_start + 1)));
-        strncpy(port_str, (url + port_start), (port_end - port_start));
-    }
-
-    
 
     /* Set the port. */
     *port = atoi(port_str);
@@ -115,21 +82,21 @@ void parse_url(char *url, char **host, int *port, char **directory) {
  *
  * We refer to the first line of an HTTP request as the "prologue" of the
  * request. An example prologue:
- * 
+ *
  *     GET http://en.wikipedia.org/wiki/Bruce_Greenwood HTTP/1.0\r\n
  *
  * This function scans said prologue and places
  *
  * Parameters:
  *      buffer (char*): The string we want to parse.
- *      
+ *
  *      method (char**): A pointer to the string where we will store the
  *      request method.
  *
  *      host (char**): A pointer to the string where we will store the host
  *      destination.
  *
- *      port (int*): 
+ *      port (int*):
  *
  *      directory (char**):
  */
@@ -286,6 +253,6 @@ void receive_response(int client_file, int server_file) {
     size_t response_size;
 
     while ((response_size = Rio_readn(server_file, buffer, MAXLINE)) > 0) {
-        Rio_writen(client_file, buffer, response_size); 
+        Rio_writen(client_file, buffer, response_size);
     }
 }
