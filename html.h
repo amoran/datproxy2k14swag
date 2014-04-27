@@ -35,11 +35,6 @@ etc.
 /* Include our files. */
 #include "csapp.h"
 
-/* Define constants and global variables for different types of requests. */
-static const char *http = "http://";
-static const char *get_request = "GET";
-static const char *post_request = "POST";
-
 /* You won't lose style points for including these long lines in your code */
 static const char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
 static const char *accept_hdr = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n";
