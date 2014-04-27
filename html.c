@@ -2,15 +2,15 @@
 
                         John Mann and Adam Moran Present
 
-               _____        _   _____  _____   ______   ____     __         
-              |  __ \      | | |  __ \|  __ \ / __ \ \ / /\ \   / /         
-              | |  | | __ _| |_| |__) | |__) | |  | \ V /  \ \_/ /          
-              | |  | |/ _` | __|  ___/|  _  /| |  | |> <    \   /           
-              | |__| | (_| | |_| |    | | \ \| |__| / . \    | |            
-              |_____/ \__,_|\__|_|    |_|  \_\\____/_/ \_\   |_|            
-          ___  _   __ _  _       _  _    _______          __     _____ 
+               _____        _   _____  _____   ______   ____     __
+              |  __ \      | | |  __ \|  __ \ / __ \ \ / /\ \   / /
+              | |  | | __ _| |_| |__) | |__) | |  | \ V /  \ \_/ /
+              | |  | |/ _` | __|  ___/|  _  /| |  | |> <    \   /
+              | |__| | (_| | |_| |    | | \ \| |__| / . \    | |
+              |_____/ \__,_|\__|_|    |_|  \_\\____/_/ \_\   |_|
+          ___  _   __ _  _       _  _    _______          __     _____
          |__ \| | /_ | || |    _| || |_ / ____\ \        / /\   / ____|
-            ) | | _| | || |_  |_  __  _| (___  \ \  /\  / /  \ | |  __ 
+            ) | | _| | || |_  |_  __  _| (___  \ \  /\  / /  \ | |  __
            / /| |/ / |__   _|  _| || |_ \___ \  \ \/  \/ / /\ \| | |_ |
           / /_|   <| |  | |   |_  __  _|____) |  \  /\  / ____ \ |__| |
          |____|_|\_\_|  |_|     |_||_| |_____/    \/  \/_/    \_\_____|
@@ -26,12 +26,12 @@ html.c
 */
 
 /* Import our AWESOME header. */
-#include "html.h" 
+#include "html.h"
 
 /**
  * port_from_url (char pointer) -> int
  *
- * This 
+ * This
  *
  * Parameters:
  *      url (char*): Pointer to a NULL-terminated string.
@@ -150,38 +150,39 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     size_t sz = sizeof(struct html_header_data);
 
-    int port = 80; /* Default value. */
     char *host = (char*)(malloc(sizeof(char) * MAXLINE));
-    char *url = (char*)(malloc(sizeof(char) * MAXLINE));   
+    char *port = (char*)(malloc(sizeof(char) * MAXLINE));
+    port[0] = '\0';
+    char *rest = (char*)(malloc(sizeof(char) * MAXLINE));
     char *directory = (char*)(malloc(sizeof(char) * MAXLINE));
     char *method = (char*)(malloc(sizeof(char) * MAXLINE));
-    char *version = (char*)(malloc(sizeof(char) * MAXLINE));
 
     html_header_data header = (html_header_data)(malloc(sz));
 
     Rio_readinitb(robust_io, file_id);
     Rio_readlineb(robust_io, buffer, MAXLINE);
-    sscanf(buffer, "%s %s", method, url);
-    sscanf(url, "http://%[^/]%s", host, url);
+    sscanf(buffer, "%s %s", method, rest);
+    sscanf(rest, "http://%[^:]:%s", host, rest);
+    sscanf(rest, "%[^/]%s", port, directory);
 
-    sscanf(host, "%[^:]:%d %s", host, &port, version);
-    if (port == 0) {
-        port = 80;
+
+    if (port[0] == '\0') {
+        port = "80";
     }
+
+    printf("Port: %s \n", port);
 
     header->host = host;
     header->directory = directory;
     header->port = port;
     header->method = method;
-    header->version = version;
 
     printf("%s", buffer);
     printf("%s\n", method);
     printf("%s\n", host);
-    printf("%d\n", port);
+    printf("%s\n", port);
     printf("%s\n", directory);
-    printf("%s\n", version);
-    //printf("%s http://%s:%d%s %s\n", method, host, port, directory, version);
+    printf("%s http://%s:%s%s \n", method, host, port, directory);
 
     /* We're done here. */
     return header;
@@ -219,19 +220,17 @@ void send_request(html_header_data header) {
     char *host = header->host;
     char *method = header->method;
     char *directory = header->directory;
-    char *version = header->version;
-    int port = header->port;
+    char *port = header->port;
 
     /* Declare extra header variables. */
     char *extra_header;
     int a = 0;
 
     /* Try to open a connection with the host on the port. */
-    int conn_file = Open_clientfd_r(host, port);
+    int conn_file = Open_clientfd_r(host, atoi(port));
 
     /* Write headers to the connection. */
-    sprintf(buffer, "%s http://%s:%d%s %s\r\n", method, host, port, directory,
-            version);
+    sprintf(buffer, "%s http://%s:%s%s \r\n", method, host, port, directory);
     sprintf(buffer, "%s%s\r\n", buffer, header->user_agent);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
