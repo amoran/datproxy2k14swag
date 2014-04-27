@@ -38,6 +38,7 @@ cache.h
 struct cache_object {
   size_t size;
   char* url;
+  void* ptr_to_item;
   struct cache_object *next;
   struct cache_object *prev;
 };
@@ -48,7 +49,7 @@ typedef struct cache_object* cache_object;
 struct cache_part {
   size_t size;
   pthread_mutex_t locked;
-  cache_object *first;
+  cache_object first;
 };
 
 typedef struct cache_part* cache_part;

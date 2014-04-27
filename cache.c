@@ -52,11 +52,11 @@ int hash(char* url) {
   int bruce = 1435; //the sum of "BruceGreenwood"
   int c;
 
-  while (c = *url++) {
+  while ((c = *url++)) {
     bruce = c + (bruce << 6) + (bruce << 16) - bruce;
   }
 
-  return hash % PARTITION_QUANTITY;
+  return bruce % PARTITION_QUANTITY;
 }
 
 
@@ -81,7 +81,7 @@ cache_object cache_search(cache_t swag_cache, char* url) {
     cur_obj = cur_obj->next;
   }
 
-  if (final_obj = NULL) {
+  if ((final_obj = NULL)) {
     //didn't find a match, releasing lock
     pthread_mutex_unlock(&target_part->locked);
   }
@@ -106,10 +106,10 @@ cache_object cache_search(cache_t swag_cache, char* url) {
 }
 
 
-cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
+void cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
 
   int target_part_num = hash(url);
-  cache_part target_part = swag_cache->parts[target_part_num];
+  cache_part target_part = c->parts[target_part_num];
   int cur_lock;
 
 
@@ -122,7 +122,7 @@ cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
     cache_object cur_obj = malloc(sizeof(struct cache_object));
     cur_obj->url = url;
     cur_obj->size = obj_size;
-    cur_obj->value = malloc(obj_size);
+    cur_obj->ptr_to_item = malloc(obj_size);
     memcpy(cur_obj->ptr_to_item, ptr, obj_size);
     strcpy(cur_obj->url, url);
 
@@ -130,14 +130,13 @@ cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
       if (tracker->next == NULL) {
         break;
       }
-      tracker = tracker->next
+      tracker = tracker->next;
     }
 
-    cach_object temp;
     while (target_part->size > (c->size/PARTITION_QUANTITY)) {
       target_part->size -= tracker->size;
       //free target_part TODO
-      tracker = tracker->prev
+      tracker = tracker->prev;
       tracker->next = NULL;
     }
 
