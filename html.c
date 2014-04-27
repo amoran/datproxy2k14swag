@@ -146,8 +146,36 @@ char *page_from_url(char *url) {
     return to_return;
 }
 
-html_header_data parse_header(char *header_str) {
-    return NULL;
+html_header_data parse_request_header(rio_t *file) {
+    char buffer[MAXLINE];
+
+    size_t sz = sizeof(struct html_header_data);
+
+    int port = 80; /* Default value. */
+    char *host;
+    char *directory;
+    char *method;
+    char *version;
+
+    html_header_data header = (html_header_data)(malloc(sz));
+
+    Rio_readlineb(file, buffer, MAXLINE);
+    sscanf(buffer, "%s http://%s[^:]%d%s %s", method, host, port,
+           directory, version);
+    if (port == 0) {
+        port = 80;
+    }
+
+    header->host = host;
+    header->directory = directory;
+    header->port;
+    header->method = method;
+    header->version = version;
+
+    printf("%s http://%s:%d%s %s\n", method, host, port, directory, version);
+
+    /* We're done here. */
+    return header;
 }
 
 void proxify_header(html_header_data header) {
@@ -181,7 +209,8 @@ void send_request(html_header_data header) {
     /* Get the host and port we're interested in. */
     char *host = header->host;
     char *method = header->request_type;
-    char *page = header->page;
+    char *directory = header->directory;
+    char *version = header->version;
     int port = header->port;
 
     /* Declare extra header variables. */
@@ -192,7 +221,8 @@ void send_request(html_header_data header) {
     int conn_file = Open_clientfd_r(host, port);
 
     /* Write headers to the connection. */
-    sprintf(buffer, "%s http://%s:%d%s HTTP/1.0\r\n", method, host, port, page);
+    sprintf(buffer, "%s http://%s:%d%s %s\r\n", method, host, port, directory,
+            version);
     sprintf(buffer, "%s%s\r\n", buffer, header->user_agent);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept_encoding);

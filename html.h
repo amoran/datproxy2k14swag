@@ -50,10 +50,11 @@ struct html_header_data {
     /* Request destination. */
     int port;
     char *host;
-    char *page;
+    char *directory;
 
     /* Request type. */
     char *request_type;
+    char *version;
 
     /* Required headers. */
     char *user_agent;
@@ -76,6 +77,6 @@ char *host_from_url(char *url);
 char *page_from_url(char *url);
 
 /* html_header_data function prototypes. */
-html_header_data parse_header(char *header_str);
+html_header_data parse_request_header(rio_t *file);
 void proxify_header(html_header_data header);
 void send_request(html_header_data header);
