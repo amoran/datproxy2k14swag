@@ -20,7 +20,7 @@
                  would have to say yeah! But you know, I
                  did not jig with the man, if you know
                  what I'm saying!"
-                                -Adam Moran
+                                -Bruce Greenwood
 
 cache.h
 
@@ -29,15 +29,17 @@ cache.h
 #include <stdlib.h>
 #include <stdio.h>
 #include "csapp.h"
+#include <string.h>
+#include <pthread.h>
 
 #define PARTITION_QUANTITY 10
 
 /* Each object forms a node in a linked list */
 struct cache_object {
   size_t size;
-  char* uri;
-  unsigned int lru;
+  char* url;
   struct cache_object *next;
+  struct cache_object *prev;
 };
 
 typedef struct cache_object* cache_object;
@@ -45,7 +47,7 @@ typedef struct cache_object* cache_object;
 /* Each partition has a pointer to the first element in their linked list */
 struct cache_part {
   size_t size;
-  int locked;
+  pthread_mutex_t locked;
   cache_object *first;
 };
 
