@@ -28,121 +28,73 @@ html.c
 /* Import our AWESOME header. */
 #include "html.h"
 
-/**
- * port_from_url (char pointer) -> int
- *
- * This
- *
- * Parameters:
- *      url (char*): Pointer to a NULL-terminated string.
- *
- * Returns:
- *      The port in the given URL as an integer or -1 if there was no port
- *      found in the input.
- */
-int port_from_url(char *url) {
-    int a = 0; /* interation */
+void parse_url(char *url, char **host, int *port, char **directory) {
+    char *port_str = (char*)(malloc(sizeof(char) * MAX_PORT_DIGITS));
 
-    /* Escape case: no port in NULL url. */
-    if (url == NULL) {
-        return -1;
+    sscanf(url, "http://%[^:]:%s", *host, url);
+    sscanf(url, "%[^/]%s", port_str, *directory);
+
+    /* If we are not given a port, then set it to the default HTTP port (80) */
+    if (port_str[0] == '\0') {
+        port_str = "80";
     }
 
-    /* Loop through the URL until we reach the end or... */
-    while (url[a] != '\0') {
-        /* ...find a colon, indicating a port. */
-        if (url[a] == ':') {
-            return atoi(url + a + 1);
-        }
+    /* Set the port. */
+    *port = atoi(port_str);
 
-        a++;
-    }
-
-    /* Nothing found. We're done here. */
-    return -1;
+    /* We're done here. */
+    free(port_str);
 }
 
 
 
 /**
- * host_from_url (char pointer) -> (char pointer)
+ * TODO
  *
- * This function extracts the host from the given URL and returns it as a
- * NULL-terminated string.
+ * We refer to the first line of an HTTP request as the "prologue" of the
+ * request. An example prologue:
+ * 
+ *     GET http://en.wikipedia.org/wiki/Bruce_Greenwood HTTP/1.0\r\n
+ *
+ * This function scans said prologue and places
  *
  * Parameters:
- *      url (char*): Pointer to a NULL-terminated string. We assume that this
- *                   value is a valid URL.
+ *      buffer (char*): The string we want to parse.
+ *      
+ *      method (char**): A pointer to the string where we will store the
+ *      request method.
  *
- * Returns:
- *      The host URL from the given URL. For example, passing in the string
- *      "http://www.nasa.gov:1969/space_the_movie.html" would return the string
- *      "www.nasa.gov".
+ *      host (char**): A pointer to the string where we will store the host
+ *      destination.
  *
- *      Another example: "http://www.imdb.com/name/nm0339304/" would return
- *      "www.imdb.com".
+ *      port (int*): 
+ *
+ *      directory (char**):
  */
-char *host_from_url(char *url) {
-    int a = 7; /* iteration */
+void parse_request_prologue(char *buffer, char **method, char **host,
+                            int *port, char **directory) {
+    /* Declare variables. */
     int len = 0;
-    char *to_return;
+    char *url;
 
-    while (url[a] != '\0' && url[a] != ':' && url[a] != '/') {
-        len += 1;
+    while (buffer[len] != '\r') {
+        len++;
     }
 
-    /* Mallocate the new string. */
-    to_return = (char*)(malloc(sizeof(char) * (len + 1)));
-    to_return[len] = '\0';
-    strncpy(to_return, (url + 7), len);
+    /* Mallocate the new strings. */
+    len += 1; /* compensate for null character */
+    *method = (char*)(malloc(sizeof(char) * len));
+    url = (char*)(malloc(sizeof(char) * len));
+    sscanf(buffer, "%s %s", *method, url);
+
+    len = strlen(url);
+    len += 1; /* compensate for null character */
+    *host = (char*)(malloc(sizeof(char) * len));
+    *directory = (char*)(malloc(sizeof(char) * len));
+    parse_url(url, host, port, directory);
 
     /* We're done here. */
-    return to_return;
-}
-
-
-
-/**
- * page_from_url (char pointer) -> (char pointer)
- *
- * Returns the URL of the page.
- *
- * Parameters:
- *      url (char*): Pointer to a NULL-terminated string. We assume that this
- *                   value is a valid URL.
- *
- * Returns:
- *      The page URL from the given URL. For example, passing in the string
- *      "http://www.nasa.gov:1969/space_the_movie.html" would return the string
- *      "/space_the_movie.html".
- *
- *      Another example: "http://www.imdb.com/name/nm0339304/" would return
- *      "/name/nm0339304/".
- */
-char *page_from_url(char *url) {
-    int a = 0; /* iteration */
-    int url_len = strlen(url);
-    int page_len = 0;
-    char *to_return;
-
-    /* Skip forward seven characters (len(http://)) -- we know this is valid
-     * input. */
-    a = 7;
-
-    while (url[a] != '/' && url[a] != '\0') {
-        a++;
-    }
-
-    a -= 1;
-    page_len = url_len - a;
-
-    /* Mallocate the new string. */
-    to_return = (char*)(malloc(sizeof(char) * (page_len + 1)));
-    to_return[page_len] = '\0';
-    strncpy(to_return, (url + a), page_len);
-
-    /* We're done here. */
-    return to_return;
+    free(url);
 }
 
 html_header_data parse_request_header(rio_t *robust_io, int file_id) {
@@ -150,44 +102,43 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     size_t sz = sizeof(struct html_header_data);
 
-    char *host = (char*)(malloc(sizeof(char) * MAXLINE));
-    char *port = (char*)(malloc(sizeof(char) * MAXLINE));
-    port[0] = '\0';
-    char *rest = (char*)(malloc(sizeof(char) * MAXLINE));
-    char *directory = (char*)(malloc(sizeof(char) * MAXLINE));
-    char *method = (char*)(malloc(sizeof(char) * MAXLINE));
+    char *host;
+    char *method;
+    char *directory;
+    int port;
 
     html_header_data header = (html_header_data)(malloc(sz));
 
     Rio_readinitb(robust_io, file_id);
     Rio_readlineb(robust_io, buffer, MAXLINE);
-    sscanf(buffer, "%s %s", method, rest);
-    sscanf(rest, "http://%[^:]:%s", host, rest);
-    sscanf(rest, "%[^/]%s", port, directory);
+    parse_request_prologue(buffer, &method, &host, &port, &directory);
 
-
-    if (port[0] == '\0') {
-        port = "80";
-    }
-
-    printf("Port: %s \n", port);
-
-    header->host = host;
-    header->directory = directory;
-    header->port = port;
-    header->method = method;
-
-    printf("%s", buffer);
-    printf("%s\n", method);
-    printf("%s\n", host);
-    printf("%s\n", port);
-    printf("%s\n", directory);
-    printf("%s http://%s:%s%s \n", method, host, port, directory);
+    printf("Whole Buffer: %s", buffer);
+    printf("Method:       %s\n", method);
+    printf("Host:         %s\n", host);
+    printf("Port:         %d\n", port);
+    printf("Directory:    %s\n\n", directory);
+    printf("%s http://%s:%d%s \n", method, host, port, directory);
 
     /* We're done here. */
     return header;
 }
 
+
+
+/**
+ * proxify_header (html_header_data) -> void
+ *
+ * Called when we want to place values in our request header to match the
+ * handout specification.
+ *
+ * Parameters:
+ *      header (html_header_data): The request data we want to modify.
+ *
+ * Returns:
+ *      Bruce Greenwood's (likely) role in the third Star Trek movie --
+ *      nothing. :-(
+ */
 void proxify_header(html_header_data header) {
     header->user_agent = user_agent_hdr;
     header->accept = accept_hdr;
@@ -220,17 +171,17 @@ void send_request(html_header_data header) {
     char *host = header->host;
     char *method = header->method;
     char *directory = header->directory;
-    char *port = header->port;
+    int port = header->port;
 
     /* Declare extra header variables. */
     char *extra_header;
     int a = 0;
 
     /* Try to open a connection with the host on the port. */
-    int conn_file = Open_clientfd_r(host, atoi(port));
+    int conn_file = Open_clientfd_r(host, port);
 
     /* Write headers to the connection. */
-    sprintf(buffer, "%s http://%s:%s%s \r\n", method, host, port, directory);
+    sprintf(buffer, "%s http://%s:%d%s \r\n", method, host, port, directory);
     sprintf(buffer, "%s%s\r\n", buffer, header->user_agent);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept);
     sprintf(buffer, "%s%s\r\n", buffer, header->accept_encoding);
