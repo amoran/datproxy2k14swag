@@ -27,7 +27,18 @@ A Cache implementation to be used in our web proxy.
 #define MAX_CACHE_SIZE 1049000;
 #define MAX_OBJECT_SIZE 102400;
 
-
+/**
+ * cache_init: size_t -> cache_t
+ *
+ * Called to initialize all parts of the cache.
+ *
+ * Parameters:
+ *      alloc_size (size_t): the size of the cache.  Usually max_cache_size.
+ *
+ * Returns:
+ *      the cache, completely initialized, partitions and all
+ *
+ */
 cache_t cache_init (size_t alloc_size) {
   int i;
   cache_t swag_cache = malloc(sizeof(struct cache_t));
@@ -40,6 +51,18 @@ cache_t cache_init (size_t alloc_size) {
   return swag_cache;
 }
 
+/**
+ * part_init: void -> cache_part
+ *
+ * Called from cache_init to initialize all of the partitions in the cache.
+ *
+ * Parameters:
+ *      alloc_size (size_t): the size of the cache.  Usually max_cache_size.
+ *
+ * Returns:
+ *      the completely initialized partition.
+ *
+ */
 cache_part part_init () {
   cache_part part = malloc(sizeof(struct cache_part));
   part->size = 0;
@@ -48,6 +71,20 @@ cache_part part_init () {
   return part;
 }
 
+/**
+ * hash: url -> int
+ *
+ * Hashes a string (the url) into an integer using.  This is the sdbm
+ * hashing algorithm implemented to reflect the awesomeness of Bruce
+ * Greenwood.
+ *
+ * Parameters:
+ *      url (char*) -> int
+ *
+ * Returns:
+ *      an integer representing which partition the key will be stored in.
+ *
+ */
 int hash(char* url) {
   int bruce = 1435; //the sum of "BruceGreenwood"
   int c;
@@ -59,7 +96,22 @@ int hash(char* url) {
   return bruce % PARTITION_QUANTITY;
 }
 
-
+/**
+ * cache_search: cache_t , (char*) -> cache_object
+ *
+ * Searches the cache for the url given.  It finds the corresponding
+ * partition and mutex locks it to find a match.  If it finds a match
+ * it moves it to the beginning of the partition (to signify most recently
+ * used) and returns it.  If it doesn't find a match, it returns NULL.
+ *
+ * Parameters:
+ *      url (char*) * swag_cache (cache_t) -> cache_object
+ *
+ * Returns:
+ *      the cache_object that it found. If it didn't find a cache object
+ *      it returns NULL, signifying the object wasn't in the cache
+ *
+ */
 cache_object cache_search(cache_t swag_cache, char* url) {
   int target_part_num = hash(url);
   cache_part target_part = swag_cache->parts[target_part_num];
@@ -105,8 +157,21 @@ cache_object cache_search(cache_t swag_cache, char* url) {
   return final_obj;
 }
 
-
-void cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
+/**
+ * cache_insert: cache_t , (char*) , (void*) , int -> void
+ *
+ * Takes a url and the object at that url and stores it into the provided
+ * cache.  It stores it at the beginning of the partition returned by
+ * hash(url).  The beginning is the most recently used.
+ *
+ * Parameters:
+ *      url, ptr, obj_size, c
+ *
+ * Returns:
+ *      The cache with the object inserted.
+ *
+ */
+cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
 
   int target_part_num = hash(url);
   cache_part target_part = c->parts[target_part_num];
@@ -157,7 +222,7 @@ void cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
 
     pthread_mutex_unlock(&target_part->locked);
   }
-  return;
+  return c;
 }
 
 void object_free(cache_object cur_obj) {
