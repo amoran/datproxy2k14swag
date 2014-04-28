@@ -82,16 +82,18 @@ This file creates the proxy.
 #include "csapp.h"
 #include "request.h"
 
+cache_t swag_cache;
+
+void pthread_handle(void* client_temp);
+
+
 /* Main used partially from the book */
 int main(int argc, char **argv) {
     /* Declare variables. */
-    int client_file, client, server_file, port, clientlen;
+    int client_file, client, port, clientlen;
     struct sockaddr_in clientaddr;
-    rio_t robust_io;
 
-    /* HTTP Stuff. */
-    html_header_data header;
-    char *url;
+
 
     /* Thread stuff. */
     pthread_t thread;
@@ -107,8 +109,7 @@ int main(int argc, char **argv) {
     client_file = Open_listenfd(port);
 
     /* Initialize the Proxy Cache */
-    cache_t swag_cache = cache_init(MAX_CACHE_SIZE);
-    cache_object object;
+    swag_cache = cache_init(MAX_CACHE_SIZE);
 
     /* We block the "broken pipe" signal. */
     Signal(SIGPIPE, SIG_IGN);
@@ -121,30 +122,46 @@ int main(int argc, char **argv) {
         clientlen = sizeof(clientaddr);
         client = Accept(client_file, (SA *)&clientaddr,
                            (unsigned int *)(&clientlen));
+        pthread_create(thread, NULL, pthread_handle, (void*) client);
 
-        header = parse_request_header(&robust_io, client);
-        url = get_url(header);
-        object = cache_search(swag_cache, url);
-
-        /* CASE:
-         * URL not in cache; send request to server. */
-        if (object == NULL) {
-            proxify_header(header);
-            server_file = send_request(header);
-            receive_response(client, server_file, swag_cache, get_url(header));
-        }
-
-        /* CASE:
-         * URL in cache; read data from cache. */
-        else {
-            Rio_writen(client, object->ptr_to_item, object->size);
-        }
-     
-        /* Destroy temporary data and close the header. */
-        free_html_header_data(header);
-        free(url);
-        Close(client);
     }
 
     return 0;
+}
+
+
+void pthread_handle(void* client_temp) {
+  int client = *((int*)client_temp);
+  pthread_detach(pthread_self());
+
+  cache_object object;
+  int server_file;
+  rio_t robust_io;
+
+  /* HTTP Stuff. */
+  html_header_data header;
+  char *url;
+
+  header = parse_request_header(&robust_io, client);
+  url = get_url(header);
+  object = cache_search(swag_cache, url);
+
+  /* CASE:
+   * URL not in cache; send request to server. */
+  if (object == NULL) {
+    proxify_header(header);
+    server_file = send_request(header);
+    receive_response(client, server_file, swag_cache, get_url(header));
+  }
+
+  /* CASE:
+   * URL in cache; read data from cache. */
+  else {
+    Rio_writen(client, object->ptr_to_item, object->size);
+  }
+
+  /* Destroy temporary data and close the header. */
+  free_html_header_data(header);
+  free(url);
+  Close(client);
 }
