@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
     struct sockaddr_in clientaddr;
     rio_t robust_io;
     html_header_data header;
+    //sigset_t signal_set;
 
     /* Check command line args, make sure port is specified */
     if (argc != 2) {
@@ -112,9 +113,14 @@ int main(int argc, char **argv) {
     /* Initialize the Proxy Cache */
     //cache_t* c = cache_init(MAX_CACHE_SIZE);
 
+    /* We block the "broken pipe" signal. */
+    Signal(SIGPIPE, SIG_IGN);
+
     /* Begin forever loop to accept requests and open new threads
      * to handle them. */
     while (1) {
+        printf("NEW REQUEST\n\n"); /* Debug. */
+
         clientlen = sizeof(clientaddr);
         conn_file = Accept(client_file, (SA *)&clientaddr,
                            (unsigned int *)(&clientlen));
