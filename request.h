@@ -22,5 +22,9 @@
 
 #include <stdio.h>
 
+#include "http.h"
+#include "cache.h"
+#include "csapp.h"
+
 int send_request(html_header_data header);
 void receive_response(int client, int server, cache_t swag_cache, char *url);

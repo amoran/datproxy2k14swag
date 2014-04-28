@@ -78,8 +78,6 @@ This file creates the proxy.
 #include <stdio.h>
 
 /* Include datproxy2k14swag headers. */
-#include "http.h"
-#include "cache.h"
 #include "csapp.h"
 #include "request.h"
 

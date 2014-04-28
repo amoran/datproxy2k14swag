@@ -29,7 +29,6 @@
 */
 
 #include "request.h"
-#include "csapp.h"
 
 /**
  * send_request : html_header_data -> int
