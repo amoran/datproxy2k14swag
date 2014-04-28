@@ -26,7 +26,7 @@ http.o: http.c http.h
 request.o: request.c request.h
 	$(CC) $(CFLAGS) -c request.c
 
-proxy: proxy.o csapp.o cache.o html.o request.o
+proxy: proxy.o csapp.o cache.o http.o request.o
 
 # Creates a tarball in ../proxylab-handin.tar that you should then
 # hand in to Autolab. DO NOT MODIFY THIS!
