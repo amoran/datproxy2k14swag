@@ -127,11 +127,7 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
 
     cache_object object = cache_search(swag_cache, url);
 
-    if (object == NULL) {
-        printf("It's not cached. :-(\n");
-    }
-
-    else {
+    if (object != NULL) {
         printf("It's cached!\n");
         Rio_writen(client, object->ptr_to_item, object->size);
         return;
