@@ -32,10 +32,10 @@ cache.h
 #include <string.h>
 #include <pthread.h>
 
-#define PARTITION_QUANTITY 5;
+#define PARTITION_QUANTITY 5
 
-#define MAX_CACHE_SIZE 1049000;
-#define MAX_OBJECT_SIZE 102400;
+#define MAX_CACHE_SIZE 1049000
+#define MAX_OBJECT_SIZE 102400
 
 /* Each object forms a node in a linked list */
 struct cache_object {
