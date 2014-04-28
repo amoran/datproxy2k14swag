@@ -83,10 +83,6 @@ This file creates the proxy.
 #include "csapp.h"
 #include "request.h"
 
-/* Recommended max cache and object sizes */
-#define MAX_CACHE_SIZE 1049000
-#define MAX_OBJECT_SIZE 102400
-
 /* Define functions. */
 void git_er_done(int file_id);
 void bruce_greenwood_echo(int file_id, int filesize);
