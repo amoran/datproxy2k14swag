@@ -123,6 +123,8 @@ int main(int argc, char **argv) {
         server_file = send_request(header);
         receive_response(conn_file, server_file);
 
+        free_html_header_data(header);
+
         /* Close the request. */
         Close(conn_file);
     }

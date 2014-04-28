@@ -28,51 +28,34 @@ html.c
 /* Import our AWESOME header. */
 #include "html.h"
 
+
+
+/**
+ * parse_url (char* char**, int*, char**) -> void
+ *
+ * TODO
+ *
+ * Parameters:
+ *      
+ */
 void parse_url(char *url, char **host, int *port, char **directory) {
-    char* method[50];
-    char* url[50];
-    char* version[50];
-    char* host[50];
-    char* port[50];
-    char* directory[50];
-    char* finalhost[50];
+    char protohost[50];
+    char port_str[MAX_PORT_DIGITS];
 
-    sscanf(str, "%s %s %s", method, url, version);
-    printf("Method: %s \n", method);
-    printf("Version: %s \n", version);
-    printf("TempURL: %s \n", url);
+    sscanf(url, "http://%[^/]%s", protohost, *directory);
 
-    sscanf(url, "http://%[^/]%s", host, directory);
-
-    printf("TempHost: %s \n", host);
-    printf("Directory: %s \n", directory);
-
-
-    char* pPosition = strchr(host, ':');
-    printf("pPosition: %s \n", pPosition);
-
-    if (pPosition != NULL) {
-        sscanf(host, "%[^:]:%s", finalhost, port);
-        printf("Host: %s \n", finalhost);
-        printf("Port: %s \n", port);
+    char* p_position = strchr(protohost, ':');
+    if (p_position != NULL) {
+        sscanf(protohost, "%[^:]:%s", *host, port_str);
+        *port = atoi(port_str);
     }
     else {
-        printf("Host: %s \n", host);
-        printf("Port: 80 \n");
+        //finalhost = *host;
+        *port = 80;
     }
 
-
-
-    return 1;
-
-
-
-    /* Set the port. */
-    *port = atoi(port_str);
-
     /* We're done here. */
-    //free(port_str);
-    //free(bg_temp);
+    printf("from parse_url %s %d %s\n\n", *host, *port, *directory);
 }
 
 
@@ -106,6 +89,8 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     int len = 0;
     char *url;
 
+    char version[50];
+
     while (buffer[len] != '\r') {
         len++;
     }
@@ -114,7 +99,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     len += 1; /* compensate for null character */
     *method = (char*)(malloc(sizeof(char) * len));
     url = (char*)(malloc(sizeof(char) * len));
-    sscanf(buffer, "%s %s", *method, url);
+    sscanf(buffer, "%s %s %s", *method, url, version);
 
     len = strlen(url);
     len += 1; /* compensate for null character */
@@ -136,6 +121,8 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     char *directory;
     int port;
 
+    char *compare;
+
     html_header_data header = (html_header_data)(malloc(sz));
 
     Rio_readinitb(robust_io, file_id);
@@ -146,6 +133,50 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     header->host = host;
     header->port = port;
     header->directory = directory;
+
+    header->extra_headers = (char**)(malloc(sizeof(char**) * 256));
+    header->num_extra_headers = 0;
+
+    Rio_readlineb(robust_io, buffer, MAXLINE);
+    while (strcmp(buffer, "\r\n")) {
+        compare = "User-Agent:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            Rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
+        compare = "Connection:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            Rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
+        compare = "Proxy-Connection:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            Rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
+        compare = "Accept-Encoding:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            Rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
+        compare = "Accept:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            Rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
+        sz = strlen(buffer);
+        header->extra_headers[header->num_extra_headers] = (char*)(malloc(sz));
+        header->num_extra_headers += 1;
+        strcpy(
+            header->extra_headers[header->num_extra_headers],
+            buffer
+        );
+    }
 
     printf("Whole Buffer: %s", buffer);
     printf("Method:       %s\n", method);
@@ -255,4 +286,14 @@ void receive_response(int client_file, int server_file) {
     while ((response_size = Rio_readn(server_file, buffer, MAXLINE)) > 0) {
         Rio_writen(client_file, buffer, response_size);
     }
+}
+
+
+
+void free_html_header_data(html_header_data header) {
+    free(header->host);
+    free(header->method);
+    free(header->directory);
+
+    free(header);
 }

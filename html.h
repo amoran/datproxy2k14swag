@@ -80,3 +80,4 @@ html_header_data parse_request_header(rio_t *file, int file_id);
 void proxify_header(html_header_data header);
 int send_request(html_header_data header);
 void receive_response(int client_file, int server_file);
+void free_html_header_data(html_header_data header);
