@@ -145,6 +145,7 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     }
 
     else {
+        printf("It's cached!\n");
         Rio_writen(client, object->ptr_to_item, object->size);
         return;
     }
