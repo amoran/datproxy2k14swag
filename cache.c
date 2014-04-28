@@ -24,8 +24,6 @@ A Cache implementation to be used in our web proxy.
 #include "cache.h"
 #include <string.h>
 
-#define MAX_CACHE_SIZE 1049000;
-#define MAX_OBJECT_SIZE 102400;
 
 /**
  * cache_init: size_t -> cache_t
@@ -85,7 +83,7 @@ cache_part part_init () {
  *      an integer representing which partition the key will be stored in.
  *
  */
-int hash(char* url) {
+unsigned int hash(char* url) {
   int bruce = 1435; //the sum of "BruceGreenwood"
   int c;
 
@@ -93,7 +91,7 @@ int hash(char* url) {
     bruce = c + (bruce << 6) + (bruce << 16) - bruce;
   }
 
-  return bruce % PARTITION_QUANTITY;
+  return (unsigned)(bruce % PARTITION_QUANTITY);
 }
 
 /**
