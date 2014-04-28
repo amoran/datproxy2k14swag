@@ -111,7 +111,7 @@ unsigned int hash(char* url) {
  *
  */
 cache_object cache_search(cache_t swag_cache, char* url) {
-  int target_part_num = hash(url);
+  unsigned int target_part_num = hash(url);
   cache_part target_part = swag_cache->parts[target_part_num];
   cache_object cur_obj = target_part->first;
   cache_object final_obj = NULL;
