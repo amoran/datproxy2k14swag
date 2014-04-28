@@ -20,10 +20,13 @@ proxy.o: proxy.c csapp.h
 cache.o: cache.c cache.h
 	$(CC) $(CFLAGS) -c cache.c
 
-html.o: html.c html.h
-	$(CC) $(CFLAGS) -c html.c
+http.o: http.c http.h
+	$(CC) $(CFLAGS) -c http.c
 
-proxy: proxy.o csapp.o cache.o html.o
+request.o: request.c request.h
+	$(CC) $(CFLAGS) -c request.c
+
+proxy: proxy.o csapp.o cache.o html.o request.o
 
 # Creates a tarball in ../proxylab-handin.tar that you should then
 # hand in to Autolab. DO NOT MODIFY THIS!

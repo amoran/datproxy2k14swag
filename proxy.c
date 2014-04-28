@@ -78,9 +78,10 @@ This file creates the proxy.
 #include <stdio.h>
 
 /* Include datproxy2k14swag headers. */
-#include "html.h"
+#include "http.h"
 #include "cache.h"
 #include "csapp.h"
+#include "request.h"
 
 /* Recommended max cache and object sizes */
 #define MAX_CACHE_SIZE 1049000
