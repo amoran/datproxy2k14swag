@@ -76,24 +76,25 @@ This file creates the proxy.
 */
 
 #include <stdio.h>
+#include <pthread.h>
 
 /* Include datproxy2k14swag headers. */
 #include "csapp.h"
 #include "request.h"
 
-/* Define functions. */
-void git_er_done(int file_id);
-void bruce_greenwood_echo(int file_id, int filesize);
-void read_request_headers(rio_t *rp);
-
 /* Main used partially from the book */
 int main(int argc, char **argv) {
     /* Declare variables. */
-    int client_file, conn_file, server_file, port, clientlen;
+    int client_file, client, server_file, port, clientlen;
     struct sockaddr_in clientaddr;
     rio_t robust_io;
+
+    /* HTTP Stuff. */
     html_header_data header;
-    //sigset_t signal_set;
+    char *url;
+
+    /* Thread stuff. */
+    pthread_t thread;
 
     /* Check command line args, make sure port is specified */
     if (argc != 2) {
@@ -106,7 +107,8 @@ int main(int argc, char **argv) {
     client_file = Open_listenfd(port);
 
     /* Initialize the Proxy Cache */
-    cache_t cache = cache_init(MAX_CACHE_SIZE);
+    cache_t swag_cache = cache_init(MAX_CACHE_SIZE);
+    cache_object object;
 
     /* We block the "broken pipe" signal. */
     Signal(SIGPIPE, SIG_IGN);
@@ -117,17 +119,31 @@ int main(int argc, char **argv) {
         printf("NEW REQUEST\n\n"); /* Debug. */
 
         clientlen = sizeof(clientaddr);
-        conn_file = Accept(client_file, (SA *)&clientaddr,
+        client = Accept(client_file, (SA *)&clientaddr,
                            (unsigned int *)(&clientlen));
-        header = parse_request_header(&robust_io, conn_file);
-        proxify_header(header);
-        server_file = send_request(header);
-        receive_response(conn_file, server_file, cache, get_url(header));
 
+        header = parse_request_header(&robust_io, client);
+        url = get_url(header);
+        object = cache_search(swag_cache, url);
+
+        /* CASE:
+         * URL not in cache; send request to server. */
+        if (object == NULL) {
+            proxify_header(header);
+            server_file = send_request(header);
+            receive_response(client, server_file, swag_cache, get_url(header));
+        }
+
+        /* CASE:
+         * URL in cache; read data from cache. */
+        else {
+            Rio_writen(client, object->ptr_to_item, object->size);
+        }
+     
+        /* Destroy temporary data and close the header. */
         free_html_header_data(header);
-
-        /* Close the request. */
-        Close(conn_file);
+        free(url);
+        Close(client);
     }
 
     return 0;

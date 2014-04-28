@@ -125,23 +125,10 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     char buffer[MAXLINE];
     size_t response_size;
 
-    int cached_size = 0;
-    int to_cache_size = 1024;
-    char *to_cache;
-
     cache_object object = cache_search(swag_cache, url);
-
-    while ((response_size = Rio_readn(server, buffer, MAXLINE)) > 0) {
-        Rio_writen(client, buffer, response_size);
-
-        if (!strcmp(buffer, "\r\n")) {
-            break;
-        }
-    }
 
     if (object == NULL) {
         printf("It's not cached. :-(\n");
-        to_cache = (char*)(malloc(sizeof(char) * to_cache_size));
     }
 
     else {
@@ -151,19 +138,9 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     }
 
     while ((response_size = Rio_readn(server, buffer, MAXLINE)) > 0) {
-        if (object == NULL) {
-            cached_size += strlen(buffer);
-
-            if (cached_size > to_cache_size) {
-                to_cache_size *= 2;
-                to_cache = (char*)(realloc(to_cache, to_cache_size));
-            }
-
-            sprintf(to_cache, "%s%s", to_cache, buffer);
-            Rio_writen(client, buffer, response_size);
-        }
+        Rio_writen(client, buffer, response_size);
     }
 
     /* Insert the file's data into the #swag cache. */
-    cache_insert(swag_cache, url, to_cache, to_cache_size);
+    cache_insert(swag_cache, url, buffer, strlen(buffer));
 }
