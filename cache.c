@@ -62,9 +62,17 @@ cache_t cache_init (size_t alloc_size) {
  *
  */
 cache_part part_init () {
-    cache_part part = malloc(sizeof(struct cache_part));
+    cache_part part;
+    int success;
+
+    part = malloc(sizeof(struct cache_part));
     part->size = 0;
-    pthread_mutex_init(&part->locked, NULL);
+
+    success = pthread_mutex_init(&part->locked, NULL);
+    if (success != 0) {
+        printf("Oh shit... :/\n");
+    }
+
     part->first = NULL;
     return part;
 }
@@ -116,7 +124,7 @@ cache_object cache_search(cache_t swag_cache, char* url) {
     cache_object cur_obj = target_part->first;
     cache_object final_obj = NULL;
 
-    int cur_lock;
+    int cur_lock = 0;
     cur_lock = pthread_mutex_lock(&target_part->locked);
     if (cur_lock != 0) {
         //couldn't get lock
@@ -195,6 +203,7 @@ cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
             cur_obj->next = NULL;
             cur_obj->prev = NULL;
             target_part->first = cur_obj;
+            pthread_mutex_unlock(&target_part->locked);
             return c;
         }
 
