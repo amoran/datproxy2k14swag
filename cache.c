@@ -91,7 +91,7 @@ unsigned int hash(char* url) {
     bruce = c + (bruce << 6) + (bruce << 16) - bruce;
   }
 
-  return (unsigned)(bruce % PARTITION_QUANTITY);
+  return ((unsigned int)bruce % PARTITION_QUANTITY);
 }
 
 /**
