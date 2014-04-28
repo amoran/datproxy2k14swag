@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     client_file = Open_listenfd(port);
 
     /* Initialize the Proxy Cache */
-    //cache_t* c = cache_init(MAX_CACHE_SIZE);
+    cache_t cache = cache_init(MAX_CACHE_SIZE);
 
     /* We block the "broken pipe" signal. */
     Signal(SIGPIPE, SIG_IGN);
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         header = parse_request_header(&robust_io, conn_file);
         proxify_header(header);
         server_file = send_request(header);
-        receive_response(conn_file, server_file);
+        receive_response(conn_file, server_file, cache, get_url(header));
 
         free_html_header_data(header);
 

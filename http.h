@@ -77,6 +77,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 
 /* html_header_data function prototypes. */
 html_header_data parse_request_header(rio_t *file, int file_id);
+char* get_url(html_header_data header);
 void proxify_header(html_header_data header);
 void print_html_header_data(html_header_data header);
 void free_html_header_data(html_header_data header);

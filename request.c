@@ -1,5 +1,34 @@
+/*
+
+                        John Mann and Adam Moran Present
+
+               _____        _   _____  _____   ______   ____     __
+              |  __ \      | | |  __ \|  __ \ / __ \ \ / /\ \   / /
+              | |  | | __ _| |_| |__) | |__) | |  | \ V /  \ \_/ /
+              | |  | |/ _` | __|  ___/|  _  /| |  | |> <    \   /
+              | |__| | (_| | |_| |    | | \ \| |__| / . \    | |
+              |_____/ \__,_|\__|_|    |_|  \_\\____/_/ \_\   |_|
+          ___  _   __ _  _       _  _    _______          __     _____
+         |__ \| | /_ | || |    _| || |_ / ____\ \        / /\   / ____|
+            ) | | _| | || |_  |_  __  _| (___  \ \  /\  / /  \ | |  __
+           / /| |/ / |__   _|  _| || |_ \___ \  \ \/  \/ / /\ \| | |_ |
+          / /_|   <| |  | |   |_  __  _|____) |  \  /\  / ____ \ |__| |
+         |____|_|\_\_|  |_|     |_||_| |_____/    \/  \/_/    \_\_____|
+
+
+                "North Carolina is the best state."
+                                - Adam Moran
+
+                "North Carolina is the best state."
+                                - John Mann
+
+                "I'm Canadian. British Columbia is my favorite
+                 providence. I'd like to visit North Carolina
+                 and decide for myself."
+                                - Bruce Greenwood
+*/
+
 #include "request.h"
-#include "cache.h"
 #include "csapp.h"
 
 /**
@@ -75,25 +104,65 @@ int send_request(html_header_data header) {
 
 
 /**
- * reveive_response : (int, int) -> void
+ * reveive_response : (int, int, char*, cache_t) -> void
  *
  * Reads a server's response from a file "server_file" and outputs it to the
  * client connection "client_file".
  *
  * Parameters:
- *      client_file (int):
+ *      client (int):
  *
- *      server_file (int):
+ *      server (int):
+ *
+ *      url (char*):
+ *
+ *      swag_cache (cache_t): 
  *
  * Returns:
  *      The movies that Bruce Greenwood has been in that also include Scott
  *      Bakula -- in other words, nothing.
  */
-void receive_response(int client_file, int server_file) {
+void receive_response(int client, int server, cache_t swag_cache, char *url) {
     char buffer[MAXLINE];
     size_t response_size;
 
-    while ((response_size = Rio_readn(server_file, buffer, MAXLINE)) > 0) {
-        Rio_writen(client_file, buffer, response_size);
+    int cached_size = 0;
+    int to_cache_size = 1024;
+    char *to_cache;
+
+    cache_object object = cache_search(swag_cache, url);
+
+    while ((response_size = Rio_readn(server, buffer, MAXLINE)) > 0) {
+        Rio_writen(client, buffer, response_size);
+
+        if (!strcmp(buffer, "\r\n")) {
+            break;
+        }
     }
+
+    if (object == NULL) {
+        to_cache = (char*)(malloc(sizeof(char) * to_cache_size));
+    }
+
+    else {
+        Rio_writen(client, object->ptr_to_item, object->size);
+        return;
+    }
+
+    while ((response_size = Rio_readn(server, buffer, MAXLINE)) > 0) {
+        if (object == NULL) {
+            cached_size += strlen(buffer);
+
+            if (cached_size > to_cache_size) {
+                to_cache_size *= 2;
+                to_cache = (char*)(realloc(to_cache, to_cache_size));
+            }
+
+            sprintf(to_cache, "%s%s", to_cache, buffer);
+            Rio_writen(client, buffer, response_size);
+        }
+    }
+
+    /* Insert the file's data into the #swag cache. */
+    cache_insert(swag_cache, url, to_cache, to_cache_size);
 }

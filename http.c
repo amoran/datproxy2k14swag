@@ -244,6 +244,22 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 }
 
 
+/**
+ *
+ */
+char* get_url(html_header_data header) {
+    int len = 0;
+    char *url;
+
+    len = strlen(header->host);
+    len += strlen(header->directory);
+
+    url = (char*)(malloc(sizeof(char) * len + 1));
+    url[len] = '\0';
+    sprintf(url, "%s%s", header->host, header->directory);
+
+    return url;
+}
 
 /**
  * proxify_header : html_header_data -> void
