@@ -140,6 +140,7 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     }
 
     if (object == NULL) {
+        printf("It's not cached. :-(\n");
         to_cache = (char*)(malloc(sizeof(char) * to_cache_size));
     }
 
