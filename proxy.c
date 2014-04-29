@@ -84,7 +84,7 @@ This file creates the proxy.
 
 cache_t swag_cache;
 
-void pthread_handle(void* client_temp);
+void *pthread_handle(void* client_temp);
 
 
 /* Main used partially from the book */
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 }
 
 
-void pthread_handle(void* client_temp) {
+void *pthread_handle(void* client_temp) {
     int client = (int)((long)client_temp);
     Pthread_detach(pthread_self());
 
@@ -166,4 +166,6 @@ void pthread_handle(void* client_temp) {
     free(url);
     Close(server_file);
     Close(client);
+
+    return NULL;
 }
