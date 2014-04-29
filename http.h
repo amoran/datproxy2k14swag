@@ -38,7 +38,6 @@ etc.
 /* TODO */
 #define MAX_PORT_DIGITS 15
 
-
 /* Define data structures. */
 struct html_header_data {
     /* Request destination. */
