@@ -63,16 +63,10 @@ cache_t cache_init (size_t alloc_size) {
  */
 cache_part part_init () {
     cache_part part;
-    int success;
 
     part = malloc(sizeof(struct cache_part));
     part->size = 0;
-
-    success = pthread_mutex_init(&part->locked, NULL);
-    if (success != 0) {
-        printf("Oh shit... :/\n");
-    }
-
+    pthread_mutex_init(&part->locked, NULL);
     part->first = NULL;
     return part;
 }
@@ -214,8 +208,8 @@ cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size) {
 
         while (target_part->size > (c->size/PARTITION_QUANTITY)) {
             target_part->size -= tracker->size;
-            //free target_part TODO
             tracker = tracker->prev;
+            object_free(tracker->next);
             tracker->next = NULL;
         }
 
@@ -244,4 +238,24 @@ void object_free(cache_object cur_obj) {
     free(cur_obj->ptr_to_item);
     free(cur_obj);
     return;
+}
+
+void cache_free(cache_t swag_cache) {
+  int i;
+
+  /* loop through every partition and navigate the linked list,
+   * freeing all elements */
+  for (i = 0; i < PARTITION_QUANTITY; i++) {
+    cache_part cur_part = swag_cache->parts[i];
+    cache_object cur_obj = cur_part->first;
+    while (cur_obj != NULL) {
+      cache_object temp = cur_obj;
+      cur_obj = cur_obj ->next;
+      object_free(temp);
+    }
+    free(swag_cache->parts[i]);
+  }
+
+  free(swag_cache);
+
 }

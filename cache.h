@@ -70,3 +70,5 @@ cache_t cache_init (size_t alloc_size);
 cache_part part_init ();
 cache_object cache_search(cache_t swag_cache, char* url);
 cache_t cache_insert(cache_t c, char* url, void* ptr, int obj_size);
+void object_free(cache_object cur_obj);
+void cache_free(cache_t swag_cache);

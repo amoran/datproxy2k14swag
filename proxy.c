@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
 
     }
 
+    cache_free(swag_cache);
     return 0;
 }
 
