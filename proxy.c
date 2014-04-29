@@ -164,5 +164,6 @@ void pthread_handle(void* client_temp) {
     /* Destroy temporary data and close the header. */
     free_html_header_data(header);
     free(url);
+    Close(server_file);
     Close(client);
 }
