@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     /* Begin forever loop to accept requests and open new threads
      * to handle them. */
     while (1) {
-        printf("NEW REQUEST\n\n"); /* Debug. */
+        printf("Processing New Request \n"); /* Debug. */
 
         clientlen = sizeof(clientaddr);
         client = Accept(listen_on, (SA *)&clientaddr,

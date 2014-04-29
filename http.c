@@ -29,7 +29,12 @@ This file implements the functions defined in "http.h".
 /* Import our AWESOME header. */
 #include "http.h"
 
-
+/* You won't lose style points for including these long lines in your code */
+static char *user_agent_hdr = "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:10.0.3) Gecko/20120305 Firefox/10.0.3\r\n";
+static char *accept_hdr = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n";
+static char *accept_encoding_hdr = "Accept-Encoding: gzip, deflate\r\n";
+static char *connection_hdr = "Connection: close\r\n";
+static char *proxy_connection_hdr = "Proxy-Connection: close\r\n";
 
 /**
  * parse_url : (char* char**, int*, char**) -> void
@@ -66,8 +71,6 @@ void parse_url(char *url, char **host, int *port, char **directory) {
     char protohost[50];
     char port_str[MAX_PORT_DIGITS];
 
-    printf("%s\n", url);
-
     sscanf(url, "http://%[^/]%s", protohost, *directory);
 
     char* p_position = strchr(protohost, ':');
@@ -81,7 +84,6 @@ void parse_url(char *url, char **host, int *port, char **directory) {
     }
 
     /* We're done here. */
-    printf("from parse_url %s %d %s\n\n", *host, *port, *directory);
 }
 
 
@@ -118,7 +120,7 @@ void parse_url(char *url, char **host, int *port, char **directory) {
  */
 void parse_request_prologue(char *buffer, char **method, char **host,
                             int *port, char **directory) {
-  //printf("from parse_request_prologue%s\n", buffer);
+    printf("      -> Parsing Prologue \n");
     /* Declare variables. */
     int len = 0;
     char *url;
@@ -135,7 +137,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     url = (char*)(malloc(sizeof(char) * len));
     if (sscanf(buffer, "%s %s %s", *method, url, version) < 2) {
         // free(method);
-
+        printf("         -> Failed parsing method, url, and version. Setting all to NULL and returning \n");
         *method = NULL;
         *host = NULL;
         *directory = NULL;
@@ -144,6 +146,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     }
 
     if (strcasecmp(*method, "GET")) {
+      printf("         -> Method was not 'GET'. Setting all to NULL and returning \n");
       *method = NULL;
       *host = NULL;
       *directory = NULL;
@@ -155,6 +158,13 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     *host = (char*)(malloc(sizeof(char) * len));
     *directory = (char*)(malloc(sizeof(char) * len));
     parse_url(url, host, port, directory);
+    printf("         -> Parsed URL: \n");
+    printf("            -> Method: %s \n", *method);
+    printf("            -> URL: %s \n", url);
+    printf("               -> Host: %s\n", *host);
+    printf("               -> Port: %d \n", *port);
+    printf("               -> Directory: %s \n", *directory);
+    printf("            -> Version: %s \n", version);
 
     /* We're done here. */
     free(url);
@@ -180,6 +190,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
  *      If we were given a malformed request, then NULL is returned.
  */
 html_header_data parse_request_header(rio_t *robust_io, int file_id) {
+  printf("   -> Parsing Request Header \n");
     char buffer[MAXLINE];
 
     size_t sz = sizeof(struct html_header_data);
@@ -195,12 +206,14 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     rio_readinitb(robust_io, file_id);
     rio_readlineb(robust_io, buffer, MAXLINE);
+    printf("      -> Raw request (first line): %s \n", buffer);
     parse_request_prologue(buffer, &method, &host, &port, &directory);
 
     /* Check for the NULL case where everything blew up like in The Core
      * when Bruce Greenwood couldn't stop the Earth's core from breaking. :-(
      */
     if (method == NULL || directory == NULL || host == NULL) {
+        printf("      -> Method, dir, and host were NULL, returning NULL as well. \n");
         return NULL;
     }
 
@@ -259,13 +272,25 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
         header->len_extra_headers += strlen(buffer);
     }
 
+    printf("      -> Printing Client Incoming Header Information: ");
+    printf("\n         -> user_agent: ");
+    printf(header->user_agent);
+    printf("\n         -> accept: ");
+    printf(header->accept);
+    printf("\n         -> accept_encoding: ");
+    printf(header->accept_encoding);
+    printf("\n         -> connection: ");
+    printf(header->connection);
+    printf("\n         -> proxy_connection: ");
+    printf(header->proxy_connection);
+
     /* DEBUG: Print stuff out! */
-    printf("Whole Buffer: %s", buffer);
-    printf("Method:       %s\n", method);
-    printf("Host:         %s\n", host);
-    printf("Port:         %d\n", port);
-    printf("Directory:    %s\n\n", directory);
-    printf("%s http://%s:%d%s \n", method, host, port, directory);
+    //printf("Whole Buffer: %s", buffer);
+    //printf("Method:       %s\n", method);
+    //printf("Host:         %s\n", host);
+    //printf("Port:         %d\n", port);
+    //printf("Directory:    %s\n\n", directory);
+    //printf("%s http://%s:%d%s \n", method, host, port, directory);
 
     /* We're done here. */
     return header;
@@ -310,7 +335,7 @@ void proxify_header(html_header_data header) {
     header->proxy_connection = proxy_connection_hdr;
 }
 
-
+/*
 
 void print_html_header_data(html_header_data header) {
     int a = 0;
@@ -336,7 +361,7 @@ void print_html_header_data(html_header_data header) {
     }
 }
 
-
+*/
 
 /**
  * free_html_header_data : html_header_data -> void

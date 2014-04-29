@@ -62,8 +62,19 @@ int send_request(html_header_data header) {
     int content_length = 0;
 
     /* DEBUG: Print the data. */
-    printf("BEGIN PRINTING HEADER:\n");
-    print_html_header_data(header);
+    //printf("BEGIN PRINTING HEADER:\n");
+    //print_html_header_data(header);
+    printf("\n      -> Printing Modified Header Information: \n");
+    printf("         -> user_agent: ");
+    printf(header->user_agent);
+    printf("         -> accept: ");
+    printf(header->accept);
+    printf("         -> accept_encoding: ");
+    printf(header->accept_encoding);
+    printf("         -> connection: ");
+    printf(header->connection);
+    printf("         -> proxy_connection: ");
+    printf(header->proxy_connection);
 
     /* Write headers to the connection. */
     sprintf(buffer, "%s %s HTTP/1.0\r\n", method, directory);
@@ -89,13 +100,18 @@ int send_request(html_header_data header) {
 
     /* The final carriage return. */
     sprintf(buffer, "%s\r\n", buffer);
-    printf("%s", buffer);
+    //printf("%s", buffer);
 
+    printf("        -> Opening connection to server");
     web_server_fd = Open_clientfd_r(header->host, port);
+    printf(" (fd = %d) \n", web_server_fd);
+
     if (web_server_fd < 0)
       return -1;
 
     /* Write the buffer to the request file. */
+
+    printf("        -> Writing Request Buffer to the web server \n");
     rio_writen(web_server_fd, buffer, strlen(buffer));
 
     /* We're done here. */
@@ -124,13 +140,13 @@ int send_request(html_header_data header) {
  *      Bakula -- in other words, nothing.
  */
 void receive_response(int client, int server, cache_t swag_cache, char *url) {
-    char buffer[MAX_OBJECT_SIZE];
+    char buffer[MAXLINE];
     size_t response_size;
 
     cache_object object = cache_search(swag_cache, url);
 
     if (object != NULL) {
-        printf("It's cached!\n");
+      //printf("It's cached!\n");
         rio_writen(client, object->ptr_to_item, object->size);
         return;
     }
@@ -138,7 +154,11 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     if (server < 0)
       return;
 
-    while ((response_size = rio_readn(server, buffer, MAX_OBJECT_SIZE)) > 0) {
+    int counter = 0;
+    printf("   -> Printing response from web server: \n");
+    while ((response_size = rio_readn(server, buffer, MAXLINE)) > 0) {
+      counter+=1;
+      printf("      -> line %d: %s \n", counter, buffer);
       rio_writen(client, buffer, response_size);
     }
     Close(server);

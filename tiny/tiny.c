@@ -52,6 +52,7 @@ void doit(int fd)
     Rio_readinitb(&rio, fd);
     Rio_readlineb(&rio, buf, MAXLINE);
     sscanf(buf, "%s %s %s", method, uri, version);
+
     printf("Method: %s \nURI: %s \nVersion %s \n", method, uri, version);
     if (strcasecmp(method, "GET")) {
        clienterror(fd, method, "501", "Not Implemented",
@@ -96,10 +97,10 @@ void read_requesthdrs(rio_t *rp)
     char buf[MAXLINE];
 
     Rio_readlineb(rp, buf, MAXLINE);
-    printf("%s \n \n", buf);
+    printf("NEXT LINE: %s \n \n", buf);
     while(strcmp(buf, "\r\n")) {
 	Rio_readlineb(rp, buf, MAXLINE);
-	printf("%s \n \n", buf);
+	printf("NEXT LINE: %s \n \n", buf);
     }
     return;
 }
