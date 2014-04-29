@@ -21,13 +21,13 @@
                  of giants."
                                 - John Mann
 
-http.c
+                                html.c
 
-This file implements the functions defined in "http.h".
+This file implements the functions defined in "html.h".
 */
 
 /* Import our AWESOME header. */
-#include "http.h"
+#include "html.h"
 
 
 
@@ -118,7 +118,6 @@ void parse_url(char *url, char **host, int *port, char **directory) {
  */
 void parse_request_prologue(char *buffer, char **method, char **host,
                             int *port, char **directory) {
-  //printf("from parse_request_prologue%s\n", buffer);
     /* Declare variables. */
     int len = 0;
     char *url;
@@ -133,22 +132,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     len += 1; /* compensate for null character */
     *method = (char*)(malloc(sizeof(char) * len));
     url = (char*)(malloc(sizeof(char) * len));
-    if (sscanf(buffer, "%s %s %s", *method, url, version) < 2) {
-        // free(method);
-
-        *method = NULL;
-        *host = NULL;
-        *directory = NULL;
-
-        return;
-    }
-
-    if (strcasecmp(*method, "GET")) {
-      *method = NULL;
-      *host = NULL;
-      *directory = NULL;
-      return;
-    }
+    sscanf(buffer, "%s %s %s", *method, url, version);
 
     len = strlen(url);
     len += 1; /* compensate for null character */
@@ -164,7 +148,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 
 /**
  * parse_request_header : (rio_t, int) -> html_header_data
- *
+ * 
  * Reads a header from a file.
  *
  * Parameters:
@@ -176,8 +160,6 @@ void parse_request_prologue(char *buffer, char **method, char **host,
  *      An html_header_data struct filled with information from the file
  *      given to us. Ownership of this object (and its fields) is passed to
  *      the caller of this function.
- *
- *      If we were given a malformed request, then NULL is returned.
  */
 html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     char buffer[MAXLINE];
@@ -191,21 +173,11 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     char *compare;
 
-    html_header_data header;
+    html_header_data header = (html_header_data)(malloc(sz));
 
-    rio_readinitb(robust_io, file_id);
-    rio_readlineb(robust_io, buffer, MAXLINE);
+    Rio_readinitb(robust_io, file_id);
+    Rio_readlineb(robust_io, buffer, MAXLINE);
     parse_request_prologue(buffer, &method, &host, &port, &directory);
-
-    /* Check for the NULL case where everything blew up like in The Core
-     * when Bruce Greenwood couldn't stop the Earth's core from breaking. :-(
-     */
-    if (method == NULL || directory == NULL || host == NULL) {
-        return NULL;
-    }
-
-    /* Valid input! Mallocate the header. */
-    header = (html_header_data)(malloc(sz));
 
     /* Assign the information from parse_request_prologue to the header
      * fields. */
@@ -217,35 +189,35 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     header->extra_headers = (char**)(malloc(sizeof(char**) * 256));
     header->num_extra_headers = 0;
 
-    rio_readlineb(robust_io, buffer, MAXLINE);
+    Rio_readlineb(robust_io, buffer, MAXLINE);
     while (strcmp(buffer, "\r\n")) {
         compare = "User-Agent:";
         if (strncmp(buffer, compare, strlen(compare))) {
-            rio_readlineb(robust_io, buffer, MAXLINE);
+            Rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Connection:";
         if (strncmp(buffer, compare, strlen(compare))) {
-            rio_readlineb(robust_io, buffer, MAXLINE);
+            Rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Proxy-Connection:";
         if (strncmp(buffer, compare, strlen(compare))) {
-            rio_readlineb(robust_io, buffer, MAXLINE);
+            Rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Accept-Encoding:";
         if (strncmp(buffer, compare, strlen(compare))) {
-            rio_readlineb(robust_io, buffer, MAXLINE);
+            Rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Accept:";
         if (strncmp(buffer, compare, strlen(compare))) {
-            rio_readlineb(robust_io, buffer, MAXLINE);
+            Rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
@@ -272,22 +244,6 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 }
 
 
-/**
- *
- */
-char* get_url(html_header_data header) {
-    int len = 0;
-    char *url;
-
-    len = strlen(header->host);
-    len += strlen(header->directory);
-
-    url = (char*)(malloc(sizeof(char) * len + 1));
-    url[len] = '\0';
-    sprintf(url, "%s%s", header->host, header->directory);
-
-    return url;
-}
 
 /**
  * proxify_header : html_header_data -> void
@@ -308,6 +264,104 @@ void proxify_header(html_header_data header) {
     header->accept_encoding = accept_encoding_hdr;
     header->connection = connection_hdr;
     header->proxy_connection = proxy_connection_hdr;
+}
+
+
+
+/**
+ * send_request : html_header_data -> int
+ *
+ * Called when we want to fire off a request whose header matches the one
+ * provided for us.
+ *
+ * Parameters:
+ *      header (html_header_data): The data we use to create the request header.
+ *
+ * Returns:
+ *      An integer representing the socket file to read from later.
+ */
+int send_request(html_header_data header) {
+    /* Setup. */
+    char buffer[MAXLINE];
+
+    /* Get the host and port we're interested in. */
+    char *method = header->method;
+    char *directory = header->directory;
+    int port = header->port;
+
+    /* Declare extra header variables. */
+    char *extra_header;
+    int a = 0;
+
+    /* Try to open a connection with the host on the port. */
+    int conn_file;
+
+    /* Calculate the content length. */
+    int content_length = 0;
+
+    /* DEBUG: Print the data. */
+    printf("BEGIN PRINTING HEADER:\n");
+    print_html_header_data(header);
+
+    /* Write headers to the connection. */
+    sprintf(buffer, "%s %s HTTP/1.0\r\n", method, directory);
+    sprintf(buffer, "%sHost: %s:%d\r\n", buffer, header->host, header->port);
+    sprintf(buffer, "%s%s", buffer, header->user_agent);
+    sprintf(buffer, "%s%s", buffer, header->accept);
+    sprintf(buffer, "%s%s", buffer, header->accept_encoding);
+    sprintf(buffer, "%s%s", buffer, header->connection);
+    sprintf(buffer, "%s%s", buffer, header->proxy_connection);
+
+    /* Write additional headers. Thanks to denial, we don't have to worry about
+     * buffer overflow! */
+    while (a < header->num_extra_headers) {
+        extra_header = header->extra_headers[a];
+        sprintf(buffer, "%s%s", buffer, extra_header);
+        a++;
+    }
+
+    /* Calculate the content length. */
+    content_length = strlen(buffer);
+    content_length += strlen("Content-Length: XXXXXXXXXXXX\r\n");
+    //sprintf(buffer, "%sContent-Length: %12d\r\n", buffer, content_length);
+
+    /* The final carriage return. */
+    sprintf(buffer, "%s\r\n", buffer);
+    printf("%s", buffer);
+
+    conn_file = Open_clientfd_r(header->host, port);
+
+    /* Write the buffer to the request file. */
+    Rio_writen(conn_file, buffer, strlen(buffer));
+
+    /* We're done here. */
+    return conn_file;
+}
+
+
+
+/**
+ * reveive_response : (int, int) -> void
+ *
+ * Reads a server's response from a file "server_file" and outputs it to the
+ * client connection "client_file".
+ *
+ * Parameters:
+ *      client_file (int):
+ *
+ *      server_file (int):
+ *
+ * Returns:
+ *      The movies that Bruce Greenwood has been in that also include Scott
+ *      Bakula -- in other words, nothing.
+ */
+void receive_response(int client_file, int server_file) {
+    char buffer[MAXLINE];
+    size_t response_size;
+
+    while ((response_size = Rio_readn(server_file, buffer, MAXLINE)) > 0) {
+        Rio_writen(client_file, buffer, response_size);
+    }
 }
 
 
@@ -360,10 +414,9 @@ void free_html_header_data(html_header_data header) {
 
     while (a < header->num_extra_headers) {
         extra_header = header->extra_headers[a];
-        free(extra_header);
+        // free(extra_header);
         a += 1;
     }
-    free(header->extra_headers);
 
     free(header);
 }

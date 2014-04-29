@@ -56,7 +56,7 @@ int send_request(html_header_data header) {
     int a = 0;
 
     /* Try to open a connection with the host on the port. */
-    int conn_file;
+    int web_server_fd;
 
     /* Calculate the content length. */
     int content_length = 0;
@@ -91,13 +91,15 @@ int send_request(html_header_data header) {
     sprintf(buffer, "%s\r\n", buffer);
     printf("%s", buffer);
 
-    conn_file = Open_clientfd_r(header->host, port);
+    web_server_fd = Open_clientfd_r(header->host, port);
+    if (web_server_fd < 0)
+      return -1;
 
     /* Write the buffer to the request file. */
-    Rio_writen(conn_file, buffer, strlen(buffer));
+    rio_writen(web_server_fd, buffer, strlen(buffer));
 
     /* We're done here. */
-    return conn_file;
+    return web_server_fd;
 }
 
 
@@ -115,27 +117,31 @@ int send_request(html_header_data header) {
  *
  *      url (char*):
  *
- *      swag_cache (cache_t): 
+ *      swag_cache (cache_t):
  *
  * Returns:
  *      The movies that Bruce Greenwood has been in that also include Scott
  *      Bakula -- in other words, nothing.
  */
 void receive_response(int client, int server, cache_t swag_cache, char *url) {
-    char buffer[MAXLINE];
+    char buffer[MAX_OBJECT_SIZE];
     size_t response_size;
 
     cache_object object = cache_search(swag_cache, url);
 
     if (object != NULL) {
         printf("It's cached!\n");
-        Rio_writen(client, object->ptr_to_item, object->size);
+        rio_writen(client, object->ptr_to_item, object->size);
         return;
     }
 
-    while ((response_size = Rio_readn(server, buffer, MAXLINE)) > 0) {
-        Rio_writen(client, buffer, response_size);
+    if (server < 0)
+      return;
+
+    while ((response_size = rio_readn(server, buffer, MAX_OBJECT_SIZE)) > 0) {
+      rio_writen(client, buffer, response_size);
     }
+    Close(server);
 
     /* Insert the file's data into the #swag cache. */
     cache_insert(swag_cache, url, buffer, strlen(buffer));

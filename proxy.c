@@ -159,13 +159,12 @@ void *pthread_handle(void* client_temp) {
     /* CASE:
      * URL in cache; read data from cache. */
     else {
-        Rio_writen(client, object->ptr_to_item, object->size);
+        rio_writen(client, object->ptr_to_item, object->size);
     }
 
     /* Destroy temporary data and close the header. */
     free_html_header_data(header);
     free(url);
-    Close(server_file);
     Close(client);
 
     return NULL;
