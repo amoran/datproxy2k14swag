@@ -118,6 +118,7 @@ void parse_url(char *url, char **host, int *port, char **directory) {
  */
 void parse_request_prologue(char *buffer, char **method, char **host,
                             int *port, char **directory) {
+    printf("from parse_request_prologue%s\n", buffer);
     /* Declare variables. */
     int len = 0;
     char *url;
@@ -132,7 +133,15 @@ void parse_request_prologue(char *buffer, char **method, char **host,
     len += 1; /* compensate for null character */
     *method = (char*)(malloc(sizeof(char) * len));
     url = (char*)(malloc(sizeof(char) * len));
-    sscanf(buffer, "%s %s %s", *method, url, version);
+    if (sscanf(buffer, "%s %s %s", *method, url, version) < 2) {
+        // free(method);
+
+        *method = NULL;
+        *host = NULL;
+        *directory = NULL;
+
+        return;
+    }
 
     len = strlen(url);
     len += 1; /* compensate for null character */
@@ -160,6 +169,8 @@ void parse_request_prologue(char *buffer, char **method, char **host,
  *      An html_header_data struct filled with information from the file
  *      given to us. Ownership of this object (and its fields) is passed to
  *      the caller of this function.
+ *
+ *      If we were given a malformed request, then NULL is returned.
  */
 html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     char buffer[MAXLINE];
@@ -173,11 +184,21 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     char *compare;
 
-    html_header_data header = (html_header_data)(malloc(sz));
+    html_header_data header;
 
     Rio_readinitb(robust_io, file_id);
     Rio_readlineb(robust_io, buffer, MAXLINE);
     parse_request_prologue(buffer, &method, &host, &port, &directory);
+
+    /* Check for the NULL case where everything blew up like in The Core
+     * when Bruce Greenwood couldn't stop the Earth's core from breaking. :-(
+     */
+    if (method == NULL || directory == NULL || host == NULL) {
+        return NULL;
+    }
+
+    /* Valid input! Mallocate the header. */
+    header = (html_header_data)(malloc(sz));
 
     /* Assign the information from parse_request_prologue to the header
      * fields. */
@@ -332,9 +353,10 @@ void free_html_header_data(html_header_data header) {
 
     while (a < header->num_extra_headers) {
         extra_header = header->extra_headers[a];
-        // free(extra_header);
+        free(extra_header);
         a += 1;
     }
+    free(header->extra_headers);
 
     free(header);
 }

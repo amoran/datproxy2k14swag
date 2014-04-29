@@ -72,7 +72,6 @@ LLLLLLLLLLffLLLLLLffffLLLLffLLffffLLLLLLffLLLLLLLLGGLL::ttLLLL@@@@CCLLLLCCLLLLLL
 Thanks, Bruce.
 
 This file creates the proxy.
-
 */
 
 #include <stdio.h>
@@ -123,7 +122,6 @@ int main(int argc, char **argv) {
         client = Accept(listen_on, (SA *)&clientaddr,
                            (unsigned int *)(&clientlen));
         Pthread_create(&thread, NULL, pthread_handle, (void*)((long)client));
-
     }
 
     cache_free(swag_cache);
@@ -144,6 +142,9 @@ void *pthread_handle(void* client_temp) {
     char *url;
 
     header = parse_request_header(&robust_io, client);
+    if (header == NULL) {
+        return NULL;
+    }
     url = get_url(header);
     object = cache_search(swag_cache, url);
 
