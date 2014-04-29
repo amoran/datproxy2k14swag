@@ -60,6 +60,7 @@ int send_request(html_header_data header) {
 
     /* Calculate the content length. */
     int content_length = 0;
+    int last_idx = 0;
 
     /* DEBUG: Print the data. */
     //printf("BEGIN PRINTING HEADER:\n");
@@ -79,6 +80,19 @@ int send_request(html_header_data header) {
     /* Write headers to the connection. */
     sprintf(buffer, "%s %s HTTP/1.0\r\n", method, directory);
     sprintf(buffer, "%sHost: %s:%d\r\n", buffer, header->host, header->port);
+
+    /* If this is a POST request, then we need to write the "Content-length"
+     * field in the header. We thus have to look at the last header field,
+     * measure its length, and write it. */
+    if (strcmp(method, "POST") == 0) {
+        if (header->num_extra_headers != 0) {
+            last_idx = header->num_extra_headers - 1;
+            content_length = strlen(header->extra_headers[last_idx]);
+            sprintf(buffer, "%sContent-Length: %d\r\n", buffer, content_length);
+        }
+    }
+
+    /* Write the header fields required by the handout. */
     sprintf(buffer, "%s%s", buffer, header->user_agent);
     sprintf(buffer, "%s%s", buffer, header->accept);
     sprintf(buffer, "%s%s", buffer, header->accept_encoding);
@@ -93,24 +107,18 @@ int send_request(html_header_data header) {
         a++;
     }
 
-    /* Calculate the content length. */
-    content_length = strlen(buffer);
-    content_length += strlen("Content-Length: XXXXXXXXXXXX\r\n");
-    //sprintf(buffer, "%sContent-Length: %12d\r\n", buffer, content_length);
-
     /* The final carriage return. */
     sprintf(buffer, "%s\r\n", buffer);
-    //printf("%s", buffer);
 
     printf("        -> Opening connection to server");
-    web_server_fd = Open_clientfd_r(header->host, port);
+    web_server_fd = open_clientfd_r(header->host, port);
     printf(" (fd = %d) \n", web_server_fd);
 
-    if (web_server_fd < 0)
-      return -1;
+    if (web_server_fd < 0) {
+        return -1;
+    }
 
     /* Write the buffer to the request file. */
-
     printf("        -> Writing Request Buffer to the web server \n");
     rio_writen(web_server_fd, buffer, strlen(buffer));
 
@@ -157,12 +165,15 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     int counter = 0;
     printf("   -> Printing response from web server: \n");
     while ((response_size = rio_readn(server, buffer, MAXLINE)) > 0) {
-      counter+=1;
-      printf("      -> line %d: %s \n", counter, buffer);
-      rio_writen(client, buffer, response_size);
+        counter+=1;
+        printf("      -> line %d: %s \n", counter, buffer);
+        rio_writen(client, buffer, response_size);
     }
     Close(server);
 
-    /* Insert the file's data into the #swag cache. */
+    /* Insert the file's data into the #swag cache after checking for size. */
+    if (strlen(buffer) > MAX_OBJECT_SIZE) {
+        return;
+    }
     cache_insert(swag_cache, url, buffer, strlen(buffer));
 }

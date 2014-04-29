@@ -127,7 +127,7 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 
     char version[50];
 
-    while (buffer[len] != '\r') {
+    while (buffer[len] != '\r' && len < MAXLINE) {
         len++;
     }
 
@@ -144,14 +144,16 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 
         return;
     }
-
-    if (strcasecmp(*method, "GET")) {
-      printf("         -> Method was not 'GET'. Setting all to NULL and returning \n");
-      *method = NULL;
-      *host = NULL;
-      *directory = NULL;
-      return;
+    
+    /*
+    if (strcasecmp(*method, "GET") && strcasecmp(*method, "POST")) {
+        printf("         -> Method was not 'GET'. Setting all to NULL and returning \n");
+        *method = NULL;
+        *host = NULL;
+        *directory = NULL;
+        return;
     }
+    */
 
     len = strlen(url);
     len += 1; /* compensate for null character */
@@ -232,6 +234,16 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
 
     rio_readlineb(robust_io, buffer, MAXLINE);
     while (strcmp(buffer, "\r\n")) {
+        compare = "Host:";
+        if (strncmp(buffer, compare, strlen(compare))) {
+            sscanf(buffer, "Host: %s", &host);
+            header->host = host;
+
+            /* Read the next line. */
+            rio_readlineb(robust_io, buffer, MAXLINE);
+            continue;
+        }
+
         compare = "User-Agent:";
         if (strncmp(buffer, compare, strlen(compare))) {
             rio_readlineb(robust_io, buffer, MAXLINE);
@@ -270,27 +282,10 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
         );
         header->num_extra_headers += 1;
         header->len_extra_headers += strlen(buffer);
+
+        /* Read the next line. */
+        rio_readlineb(robust_io, buffer, MAXLINE);
     }
-
-    printf("      -> Printing Client Incoming Header Information: ");
-    printf("\n         -> user_agent: ");
-    printf(header->user_agent);
-    printf("\n         -> accept: ");
-    printf(header->accept);
-    printf("\n         -> accept_encoding: ");
-    printf(header->accept_encoding);
-    printf("\n         -> connection: ");
-    printf(header->connection);
-    printf("\n         -> proxy_connection: ");
-    printf(header->proxy_connection);
-
-    /* DEBUG: Print stuff out! */
-    //printf("Whole Buffer: %s", buffer);
-    //printf("Method:       %s\n", method);
-    //printf("Host:         %s\n", host);
-    //printf("Port:         %d\n", port);
-    //printf("Directory:    %s\n\n", directory);
-    //printf("%s http://%s:%d%s \n", method, host, port, directory);
 
     /* We're done here. */
     return header;
