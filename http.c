@@ -144,21 +144,13 @@ void parse_request_prologue(char *buffer, char **method, char **host,
 
         return;
     }
-    
-    /*
-    if (strcasecmp(*method, "GET") && strcasecmp(*method, "POST")) {
-        printf("         -> Method was not 'GET'. Setting all to NULL and returning \n");
-        *method = NULL;
-        *host = NULL;
-        *directory = NULL;
-        return;
-    }
-    */
 
     len = strlen(url);
     len += 1; /* compensate for null character */
     *host = (char*)(malloc(sizeof(char) * len));
     *directory = (char*)(malloc(sizeof(char) * len));
+    *host[0] = '\0';
+    *directory[0] = '\0';
     parse_url(url, host, port, directory);
     printf("         -> Parsed URL: \n");
     printf("            -> Method: %s \n", *method);
@@ -228,15 +220,14 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     header->host = host;
     header->port = port;
     header->directory = directory;
-
-    header->extra_headers = (char**)(malloc(sizeof(char**) * 256));
-    header->num_extra_headers = 0;
+    header->extra_headers = (char*)(malloc(sizeof(char) * MAXLINE * 10));
+    header->len_extra_headers = 0;
 
     rio_readlineb(robust_io, buffer, MAXLINE);
     while (strcmp(buffer, "\r\n")) {
         compare = "Host:";
-        if (strncmp(buffer, compare, strlen(compare))) {
-            sscanf(buffer, "Host: %s", &host);
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
+            sscanf(buffer, "Host: %s", host);
             header->host = host;
 
             /* Read the next line. */
@@ -245,43 +236,36 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
         }
 
         compare = "User-Agent:";
-        if (strncmp(buffer, compare, strlen(compare))) {
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
             rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Connection:";
-        if (strncmp(buffer, compare, strlen(compare))) {
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
             rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Proxy-Connection:";
-        if (strncmp(buffer, compare, strlen(compare))) {
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
             rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Accept-Encoding:";
-        if (strncmp(buffer, compare, strlen(compare))) {
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
             rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
         compare = "Accept:";
-        if (strncmp(buffer, compare, strlen(compare))) {
+        if (strncmp(buffer, compare, strlen(compare)) == 0) {
             rio_readlineb(robust_io, buffer, MAXLINE);
             continue;
         }
 
-        sz = strlen(buffer);
-        header->extra_headers[header->num_extra_headers] = (char*)(malloc(sz));
-        strcpy(
-            header->extra_headers[header->num_extra_headers],
-            buffer
-        );
-        header->num_extra_headers += 1;
-        header->len_extra_headers += strlen(buffer);
+        strcat(header->extra_headers, buffer);
 
         /* Read the next line. */
         rio_readlineb(robust_io, buffer, MAXLINE);
@@ -290,6 +274,7 @@ html_header_data parse_request_header(rio_t *robust_io, int file_id) {
     /* We're done here. */
     return header;
 }
+
 
 
 /**
@@ -308,6 +293,8 @@ char* get_url(html_header_data header) {
 
     return url;
 }
+
+
 
 /**
  * proxify_header : html_header_data -> void
@@ -330,33 +317,7 @@ void proxify_header(html_header_data header) {
     header->proxy_connection = proxy_connection_hdr;
 }
 
-/*
 
-void print_html_header_data(html_header_data header) {
-    int a = 0;
-    int len = header->num_extra_headers;
-
-    printf(
-        "%s http://%s:%d%s HTTP/1.0\n",
-        header->method,
-        header->host,
-        header->port,
-        header->directory
-    );
-
-    printf(header->user_agent);
-    printf(header->accept);
-    printf(header->accept_encoding);
-    printf(header->connection);
-    printf(header->proxy_connection);
-
-    while (a < len) {
-        printf(header->extra_headers[a]);
-        a++;
-    }
-}
-
-*/
 
 /**
  * free_html_header_data : html_header_data -> void
@@ -371,18 +332,9 @@ void print_html_header_data(html_header_data header) {
  *      Nothing.
  */
 void free_html_header_data(html_header_data header) {
-    int a = 0;
-    char *extra_header;
-
     free(header->host);
     free(header->method);
     free(header->directory);
-
-    while (a < header->num_extra_headers) {
-        extra_header = header->extra_headers[a];
-        free(extra_header);
-        a += 1;
-    }
     free(header->extra_headers);
 
     free(header);

@@ -51,20 +51,10 @@ int send_request(html_header_data header) {
     char *directory = header->directory;
     int port = header->port;
 
-    /* Declare extra header variables. */
-    char *extra_header;
-    int a = 0;
-
     /* Try to open a connection with the host on the port. */
     int web_server_fd;
 
-    /* Calculate the content length. */
-    int content_length = 0;
-    int last_idx = 0;
-
     /* DEBUG: Print the data. */
-    //printf("BEGIN PRINTING HEADER:\n");
-    //print_html_header_data(header);
     printf("\n      -> Printing Modified Header Information: \n");
     printf("         -> user_agent: ");
     printf(header->user_agent);
@@ -81,31 +71,13 @@ int send_request(html_header_data header) {
     sprintf(buffer, "%s %s HTTP/1.0\r\n", method, directory);
     sprintf(buffer, "%sHost: %s:%d\r\n", buffer, header->host, header->port);
 
-    /* If this is a POST request, then we need to write the "Content-length"
-     * field in the header. We thus have to look at the last header field,
-     * measure its length, and write it. */
-    if (strcmp(method, "POST") == 0) {
-        if (header->num_extra_headers != 0) {
-            last_idx = header->num_extra_headers - 1;
-            content_length = strlen(header->extra_headers[last_idx]);
-            sprintf(buffer, "%sContent-Length: %d\r\n", buffer, content_length);
-        }
-    }
-
     /* Write the header fields required by the handout. */
     sprintf(buffer, "%s%s", buffer, header->user_agent);
     sprintf(buffer, "%s%s", buffer, header->accept);
     sprintf(buffer, "%s%s", buffer, header->accept_encoding);
     sprintf(buffer, "%s%s", buffer, header->connection);
     sprintf(buffer, "%s%s", buffer, header->proxy_connection);
-
-    /* Write additional headers. Thanks to denial, we don't have to worry about
-     * buffer overflow! */
-    while (a < header->num_extra_headers) {
-        extra_header = header->extra_headers[a];
-        sprintf(buffer, "%s%s", buffer, extra_header);
-        a++;
-    }
+    sprintf(buffer, "%s%s", buffer, header->extra_headers);
 
     /* The final carriage return. */
     sprintf(buffer, "%s\r\n", buffer);
@@ -135,13 +107,13 @@ int send_request(html_header_data header) {
  * client connection "client_file".
  *
  * Parameters:
- *      client (int):
+ *      client (int): The file descriptor int of the client output file.
  *
- *      server (int):
+ *      server (int): The server descriptor int of the server input file.
  *
- *      url (char*):
+ *      url (char*): The URL of the request.
  *
- *      swag_cache (cache_t):
+ *      swag_cache (cache_t): Our cache.
  *
  * Returns:
  *      The movies that Bruce Greenwood has been in that also include Scott
@@ -154,13 +126,13 @@ void receive_response(int client, int server, cache_t swag_cache, char *url) {
     cache_object object = cache_search(swag_cache, url);
 
     if (object != NULL) {
-      //printf("It's cached!\n");
         rio_writen(client, object->ptr_to_item, object->size);
         return;
     }
 
-    if (server < 0)
-      return;
+    if (server < 0) {
+        return;
+    }
 
     int counter = 0;
     printf("   -> Printing response from web server: \n");

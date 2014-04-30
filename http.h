@@ -56,8 +56,7 @@ struct html_header_data {
     char *proxy_connection;
 
     /* Extra headers. */
-    char **extra_headers;
-    int num_extra_headers;
+    char *extra_headers;
     int len_extra_headers; /* number of characters in extra headers */
 };
 
